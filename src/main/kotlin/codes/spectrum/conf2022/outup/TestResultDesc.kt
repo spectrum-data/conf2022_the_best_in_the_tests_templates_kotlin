@@ -39,11 +39,21 @@ import kotlinx.serialization.Serializable
  * */
 
 @Serializable
-data class TestExpectedResultDesc(
+data class TestResultDesc(
     val id: String = "",
     val entryConditional: EntryConditional = EntryConditional.CONTAINS,
     val orderConditional: OrderConditional = OrderConditional.DOES_NOT_MATTER,
     val result: List<AnswerDesc> = emptyList()
 ) {
+    fun isExactly() : Boolean {
+        return entryConditional == EntryConditional.EXACTLY
+    }
 
+    fun isContains() : Boolean {
+        return entryConditional == EntryConditional.CONTAINS
+    }
+
+    fun isOrder() : Boolean {
+        return orderConditional == OrderConditional.SAME_ORDER
+    }
 }

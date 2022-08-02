@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 
-class TestForGeneratingJson() : FunSpec() {
+class TestForGeneratingJson(args: Array<String> ) : FunSpec() {
     init {
         val jsonService = Json {
             encodeDefaults = true
@@ -12,7 +12,7 @@ class TestForGeneratingJson() : FunSpec() {
         }
 
         test("Генерация json") {
-            val testExpectedResultDesc = TestExpectedResultDesc(
+            val testResultDesc = TestResultDesc(
                 id = "harisov_1",
                 entryConditional = EntryConditional.EXACTLY,
                 orderConditional = OrderConditional.DOES_NOT_MATTER,
@@ -27,7 +27,7 @@ class TestForGeneratingJson() : FunSpec() {
             )
 
 
-            println(jsonService.encodeToString(testExpectedResultDesc))
+            println(jsonService.encodeToString(testResultDesc))
         }
     }
 }

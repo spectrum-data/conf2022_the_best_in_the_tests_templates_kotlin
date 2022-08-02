@@ -1,5 +1,6 @@
-package codes.spectrum.conf2022.base
+package codes.spectrum.conf2022.input
 
+import codes.spectrum.conf2022.base.TBITConfig
 
 /**
  * author \/ number \/ stringToProcessed \/ isDisabled \/ commentOnFailure
@@ -18,5 +19,20 @@ data class TestDesc(
 
     fun validate(): Unit {
 
+    }
+
+    companion object {
+        //TODO("Не красиво")
+        fun parse(line: String, config: TBITConfig): TestDesc {
+            val splitLine = line.split(config.separator)
+
+            return TestDesc(
+                author = splitLine[0],
+                number = splitLine[1].toInt(),
+                stringToProcessed = splitLine[2],
+                isDisabled = splitLine[3].toBoolean(),
+                commentOnFailure = splitLine[4],
+            )
+        }
     }
 }

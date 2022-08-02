@@ -9,5 +9,19 @@ data class AnswerDesc(
     val assuranceRate: AssuranceRate = AssuranceRate.FACT,
     val isValid: Boolean = true,
     val value: String = ""
-) {}
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other is AnswerDesc) {
+            return internalEqual(other as AnswerDesc)
+        }
+
+        return super.equals(other)
+    }
+
+    private fun internalEqual(comparedAnswer: AnswerDesc): Boolean {
+        return comparedAnswer.docType == docType
+                && comparedAnswer.assuranceRate == assuranceRate
+                && comparedAnswer.value == value
+    }
+}
 
