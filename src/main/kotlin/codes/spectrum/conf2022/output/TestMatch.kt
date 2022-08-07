@@ -1,4 +1,4 @@
-package codes.spectrum.conf2022.outup
+package codes.spectrum.conf2022.output
 
 enum class MatchResult{
     SUCCESS,

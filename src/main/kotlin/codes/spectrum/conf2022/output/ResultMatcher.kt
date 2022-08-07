@@ -1,4 +1,4 @@
-package codes.spectrum.conf2022.outup
+package codes.spectrum.conf2022.output
 
 import codes.spectrum.conf2022.base.TBITConfig
 
@@ -12,7 +12,7 @@ class ResultMatcher(val config: TBITConfig) {
                     expectedResultDesc.isContains() && expectedResultDesc.isOrder() -> matchContainsOrdered()
                     expectedResultDesc.isContains() && !expectedResultDesc.isOrder() -> matchContainsNotOrdered()
 
-                    else -> error("Неопознанная комбинация описания теста: ${context.expectedResultDesc.entryConditional} и ${context.expectedResultDesc.orderConditional}")
+                    else -> error("Неопознанная комбинация описания теста: ${context.expectedResultDesc.entryConstraint} и ${context.expectedResultDesc.orderConditional}")
                 }
             }
         }.getOrDefault(
@@ -81,12 +81,12 @@ class ResultMatcher(val config: TBITConfig) {
     }
 
     private fun MatcherContext.isAnswersCountEqual(): Boolean {
-        return actualResultDesc.result.count() == expectedResultDesc.result.count()
+        return actualExtractedDocs.count() == expectedResultDesc.result.count()
     }
 
     private fun MatcherContext.isContainsInOrder(): Boolean {
         expectedResultDesc.result.forEachIndexed { i, expectedAnswer ->
-            if (actualResultDesc.result[i] != expectedAnswer) return false
+            if (actualExtractedDocs[i] != expectedAnswer) return false
         }
 
         return true
@@ -94,7 +94,7 @@ class ResultMatcher(val config: TBITConfig) {
 
     private fun MatcherContext.isContainsDespiteOrder(): Boolean {
         expectedResultDesc.result.forEach { expectedAnswer ->
-            if (!actualResultDesc.result.contains(expectedAnswer)) return false
+            if (!actualExtractedDocs.contains(expectedAnswer)) return false
         }
 
         return true
