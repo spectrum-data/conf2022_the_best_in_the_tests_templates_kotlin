@@ -27,7 +27,7 @@ class MyDocParserTest : FunSpec() {
                             val result = myDocParser.parse(it)
                                 .single()
 
-                            result.docType shouldBe DocType.PASSPORT
+                            result.docType shouldBe DocType.PASSPORT_RF
                             result.value shouldBe "0123456789"
                         }
                     }

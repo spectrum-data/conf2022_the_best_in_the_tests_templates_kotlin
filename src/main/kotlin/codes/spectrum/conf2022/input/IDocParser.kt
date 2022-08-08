@@ -14,7 +14,7 @@ class MyDocParser : IDocParser {
 
     private fun parsePassport(input: String): ExtractedDocument {
         return ExtractedDocument(
-            docType = DocType.PASSPORT,
+            docType = DocType.PASSPORT_RF,
             value = input.replace("\\D".toRegex(), "")
         )
     }
