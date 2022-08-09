@@ -1,5 +1,6 @@
 package codes.spectrum.conf2022.output
 
+import codes.spectrum.conf2022.base.doc_type.DocType
 import kotlinx.serialization.Serializable
 
 /**
@@ -38,8 +39,56 @@ data class ExpectedResult private constructor(
     val result: List<ExtractedDocument> = emptyList()
 ) {
     companion object {
+        /**
+         * Разделитель при указании нескольких документов
+         *
+         * 1234567890 =? PASSPORT_RF:1234567890[EXPECTED_DOCUMENTS_SEPARATOR]INN_UL:1234567890
+         * */
+        const val EXPECTED_DOCUMENTS_SEPARATOR = ","
+
         fun parse(input: String): ExpectedResult {
-            TODO()
+            val parsedByRegex = INPUT_STRUCTURE_REGEX.toRegex().matchEntire(input)
+
+            check(parsedByRegex != null && parsedByRegex.groupValues.count() == 4) {
+                "Входная строка '$input' не соответствует структуре '$INPUT_STRUCTURE_REGEX'"
+            }
+
+            val filledConstraints = createAndFillConstraints(parsedByRegex.groupValues[2])
+            val parseExpectedDocs = parseExpectedDocs(parsedByRegex.groupValues[3])
+
+            return filledConstraints.copy(result = parseExpectedDocs)
         }
+
+        private fun parseExpectedDocs(input: String): List<ExtractedDocument> {
+            return input.split(EXPECTED_DOCUMENTS_SEPARATOR).map { expectedDocDesc ->
+                expectedDocDesc.split(":")
+                    .let { ExtractedDocument(docType = DocType.valueOf(it[0]), value = it.getOrElse(1) { "" }) }
+            }
+        }
+
+        private fun createAndFillConstraints(constraints: String): ExpectedResult {
+            var isExactly: Boolean? = null
+            var isOrderRequired: Boolean? = null
+
+            when (constraints) {
+                "==" -> {
+                    isExactly = true; isOrderRequired = true
+                }
+                "~=" -> {
+                    isExactly = false; isOrderRequired = true
+                }
+                "=?" -> {
+                    isExactly = true; isOrderRequired = false
+                }
+                "~?" -> {
+                    isExactly = false; isOrderRequired = false
+                }
+                else -> error("не ожиданное обозначение ограничений в описании теста - $constraints")
+            }
+
+            return ExpectedResult(isExactly = isExactly, isOrderRequired = isOrderRequired)
+        }
+
+        private const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]+?)(\\b[=?~]{2}\\b)([\\s\\S]+?)\$"
     }
 }
