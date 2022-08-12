@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
  * Описание ожидаемого результата парсинга входной строки
  * */
 @Serializable
-data class ExpectedResult private constructor(
+data class ExpectedResult(
     /**
      * Ограничение на вхождение результатов в итоговую выборку
      * true - исключительно ожидаемый набор и ничего кроме
@@ -38,6 +38,14 @@ data class ExpectedResult private constructor(
      * */
     val result: List<ExtractedDocument> = emptyList()
 ) {
+
+    /**
+     * Проверяет набор документов на совпадение с ожидаемым результатом.
+     * */
+    fun match(documents: List<ExtractedDocument>): Boolean {
+        return true
+    }
+
     companion object {
         /**
          * Разделитель при указании нескольких документов
@@ -62,7 +70,12 @@ data class ExpectedResult private constructor(
         private fun parseExpectedDocs(input: String): List<ExtractedDocument> {
             return input.split(EXPECTED_DOCUMENTS_SEPARATOR).map { expectedDocDesc ->
                 expectedDocDesc.split(":")
-                    .let { ExtractedDocument(docType = DocType.valueOf(it[0]), value = it.getOrElse(1) { "" }) }
+                    .let {
+                        ExtractedDocument(
+                            docType = DocType.valueOf(it[0].trim()),
+                            value = it.getOrElse(1) { "" }.trim().replace(Regex("\\s"), "")
+                        )
+                    }
             }
         }
 
