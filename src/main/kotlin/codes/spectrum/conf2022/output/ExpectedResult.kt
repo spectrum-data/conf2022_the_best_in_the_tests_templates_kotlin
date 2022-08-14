@@ -36,14 +36,43 @@ data class ExpectedResult(
     /**
      * Набор ожидаемых извлеченных документов
      * */
-    val result: List<ExtractedDocument> = emptyList()
+    val expected: List<ExtractedDocument> = emptyList()
 ) {
 
     /**
      * Проверяет набор документов на совпадение с ожидаемым результатом.
      * */
-    fun match(documents: List<ExtractedDocument>): Boolean {
-        return true
+    fun match(actual: List<ExtractedDocument>): Boolean {
+        val doCountsEqual = actual.count() == expected.count()
+
+
+        return when {
+            isExactly && isOrderRequired -> {
+                doCountsEqual && actual.zip(expected).all { (a, b) -> a == b }
+            }
+            isExactly && !isOrderRequired -> {
+                doCountsEqual && actual.containsAll(expected)
+            }
+
+            /**
+             * Должно ли быть эквивалетно:
+             * Expected: PASSPORT_RF, INN_FL, INN_UL
+             * Actual: PASSPORT_RF, INN_UL
+             * */
+            !isExactly && isOrderRequired -> {
+                var subsequenceIndex = 0
+                val actualIterator = actual.iterator()
+
+                while (actualIterator.hasNext() && subsequenceIndex < expected.size) {
+                    if (actualIterator.next() == expected[subsequenceIndex]) subsequenceIndex += 1
+                }
+
+                return subsequenceIndex == expected.size
+            }
+
+            !isExactly && !isOrderRequired -> actual.containsAll(expected)
+            else -> error("Некорректной сконфигурирован ожидаемый результат: $this")
+        }
     }
 
     companion object {
@@ -64,7 +93,7 @@ data class ExpectedResult(
             val filledConstraints = createAndFillConstraints(parsedByRegex.groupValues[2])
             val parseExpectedDocs = parseExpectedDocs(parsedByRegex.groupValues[3])
 
-            return filledConstraints.copy(result = parseExpectedDocs)
+            return filledConstraints.copy(expected = parseExpectedDocs)
         }
 
         private fun parseExpectedDocs(input: String): List<ExtractedDocument> {
