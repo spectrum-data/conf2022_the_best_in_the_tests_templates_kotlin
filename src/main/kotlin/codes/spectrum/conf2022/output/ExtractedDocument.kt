@@ -1,6 +1,6 @@
 package codes.spectrum.conf2022.output
 
-import codes.spectrum.conf2022.base.doc_type.DocType
+import codes.spectrum.conf2022.doc_type.DocType
 import kotlinx.serialization.Serializable
 
 /**

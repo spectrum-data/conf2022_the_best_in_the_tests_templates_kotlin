@@ -1,6 +1,6 @@
 package codes.spectrum.conf2022.output
 
-import codes.spectrum.conf2022.base.doc_type.DocType
+import codes.spectrum.conf2022.doc_type.DocType
 import kotlinx.serialization.Serializable
 
 /**
@@ -55,7 +55,7 @@ data class ExpectedResult(
             }
 
             /**
-             * Должно ли быть эквивалетно:
+             * Должно ли быть эквивалетно?
              * Expected: PASSPORT_RF, INN_FL, INN_UL
              * Actual: PASSPORT_RF, INN_UL
              * */
