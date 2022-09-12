@@ -35,18 +35,18 @@ class LocalTest : FunSpec() {
             if (testDescValidateResult.isValid) {
                 TestDesc.parseFromFile(testDescFile).forAll { testDesc ->
 
-                    testDesc.isDisabled
+                    if (!testDesc.isDisabled) {
+                        launch {
+                            test("${testDesc.author} №${testDesc.number}") {
+                                val expectedResult = ExpectedResult.parse(testDesc.stringToProcessed)
 
-                    launch {
-                        test("${testDesc.author} №${testDesc.number}") {
-                            val expectedResult = ExpectedResult.parse(testDesc.stringToProcessed)
+                                val actualResult = docParser.parse(testDesc.stringToProcessed)
 
-                            val actualResult = docParser.parse(testDesc.stringToProcessed)
+                                assert(expectedResult.match(actualResult)) {
+                                    "${testDesc.commentOnFailure}.\nВходная строка: ${testDesc.stringToProcessed}\nРезультат:${actualResult}"
+                                }
 
-                            assert(expectedResult.match(actualResult)) {
-                                "${testDesc.commentOnFailure}.\nВходная строка: ${testDesc.stringToProcessed}\nРезультат:${actualResult}"
                             }
-
                         }
                     }
                 }

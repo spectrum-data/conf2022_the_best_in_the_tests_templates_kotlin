@@ -75,7 +75,6 @@ class TestCaseFileValidatorTest : FunSpec() {
                 )
             )
 
-
             val incorrectDelimiterCountLine = listOf(
                 "someAuthor",
                 "1",
@@ -134,6 +133,35 @@ class TestCaseFileValidatorTest : FunSpec() {
                     isValid = false,
                     errorMessages = listOf(
                         "В строке с номером 2 сегмент isDisabled некорректно заполнен: someIncorrectBooleanValue"
+                    )
+                )
+            )
+
+            testValidate(
+                testName = "совпадает связка author + number - не валиден, сообщение с указанием номера некорректной строки",
+                actualFileLines = listOf(
+                    DEFAULT_HEADER,
+
+                    listOf(
+                        "someAuthor",
+                        "1",
+                        "someStringToPrecessed",
+                        "true",
+                        "someComment"
+                    ).joinToString(DEFAULT_DELIMITER),
+
+                    listOf(
+                        "someAuthor",
+                        "1",
+                        "anotherStringToPrecessed",
+                        "false",
+                        "anotherComment"
+                    ).joinToString(DEFAULT_DELIMITER),
+                ),
+                expectedValidateResult = TestDesc.TestDescFileValidateResult(
+                    isValid = false,
+                    errorMessages = listOf(
+                        "В строках с номерами 2 и 3 совпадает связка author+number"
                     )
                 )
             )

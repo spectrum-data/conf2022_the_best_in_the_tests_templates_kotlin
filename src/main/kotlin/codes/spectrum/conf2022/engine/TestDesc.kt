@@ -36,9 +36,41 @@ data class TestDesc(
          *  1) наличие хедера
          *  2) кол-во разделителей в каждой строке = кол-ву разделителей в хедере
          *  3) тип полей number и isDisabled
+         *  4) что идентификатор теста (author + number) уникальный
          * */
         fun validate(fileToValidate: File): TestDescFileValidateResult {
             val errorMessages = mutableListOf<String>()
+            val testIdToLineNumber = mutableMapOf<String, Int>()
+
+            fun validateLine(line: String, lineIndex: Int): List<String> {
+                val splitLine = line.split(DEFAULT_COLUMN_DELIMITER)
+                val delimiterCount = splitLine.size - 1
+
+                val lineNumber = lineIndex + 1
+
+                return buildList {
+                    if (delimiterCount != expectedDelimiterCount) {
+                        add("В строке с номером $lineNumber не верное количество разделителей ($delimiterCount), должно быть $expectedDelimiterCount: $line")
+                    } else {
+                        val testId = "${splitLine[0]}${splitLine[1]}"
+
+
+                        if (testIdToLineNumber.containsKey(testId)) {
+                            add(
+                                "В строках с номерами ${testIdToLineNumber[testId]} и $lineNumber совпадает связка author+number"
+                            )
+                        } else {
+                            testIdToLineNumber[testId] = lineNumber
+                        }
+
+                        if (!splitLine[1].all { it.isDigit() })
+                            add("В строке с номером $lineNumber сегмент с номеров некорректно заполнен: ${splitLine[1]}")
+
+                        if (splitLine[3].lowercase().toBooleanStrictOrNull() == null)
+                            add("В строке с номером $lineNumber сегмент isDisabled некорректно заполнен: ${splitLine[3]}")
+                    }
+                }
+            }
 
             fileToValidate.reader().useLines {
                 it.forEachIndexed { index, line ->
@@ -65,23 +97,6 @@ data class TestDesc(
             return errorMessages
         }
 
-        private fun validateLine(line: String, lineIndex: Int): List<String> {
-            val splitLine = line.split(DEFAULT_COLUMN_DELIMITER)
-            val delimiterCount = splitLine.size - 1
-
-            val lineNumber = lineIndex + 1
-
-            return buildList {
-                if (delimiterCount != expectedDelimiterCount)
-                    add("В строке с номером $lineNumber не верное количество разделителей ($delimiterCount), должно быть $expectedDelimiterCount: $line")
-
-                if (!splitLine[1].all { it.isDigit() })
-                    add("В строке с номером $lineNumber сегмент с номеров некорректно заполнен: ${splitLine[1]}")
-
-                if (splitLine[3].lowercase().toBooleanStrictOrNull() == null)
-                    add("В строке с номером $lineNumber сегмент isDisabled некорректно заполнен: ${splitLine[3]}")
-            }
-        }
 
         /**
          * Парсит входной файл в список описаний тестов
