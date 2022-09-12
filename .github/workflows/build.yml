@@ -31,3 +31,6 @@ jobs:
       
       - name: validate
         run: ./gradlew test --tests *ValidateLocal*
+
+      - name: local_test
+        run: ./gradlew test --tests *LocalTest*
