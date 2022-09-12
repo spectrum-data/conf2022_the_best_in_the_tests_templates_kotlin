@@ -27,7 +27,7 @@ jobs:
           java-version: '11'
           cache: 'gradle'
       - name: build
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build -x test --no-daemon
       
       - name: validate
         run: ./gradlew test --tests *ValidateLocal*

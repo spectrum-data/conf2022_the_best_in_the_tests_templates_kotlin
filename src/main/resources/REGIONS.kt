@@ -1,3 +1,4 @@
+/*
 package codes.spectrum.conf2022.base.doc_type.dictionaries
 
 object REGIONS : BaseDictionary {
@@ -98,4 +99,4 @@ object REGIONS : BaseDictionary {
 89	Ямало-Ненецкий автономный округ
 99	Иные территории, включая город и космодром Байконур
     """.trimIndent()
-}
+}*/

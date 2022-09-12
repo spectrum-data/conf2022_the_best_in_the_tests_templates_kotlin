@@ -23,30 +23,19 @@ class LocalTest : FunSpec() {
 
     init {
         context("локальные тесты") {
-            val testDescValidateResult = TestDesc.validate(testDescFile)
+            TestDesc.parseFromFile(testDescFile).forAll { testDesc ->
 
-            test("валидация входного файла") {
-                assert(testDescValidateResult.isValid) {
-                    "Входной файл ${inputFileName} не валиден:\n" +
-                            testDescValidateResult.errorMessages.joinToString("\n")
-                }
-            }
+                if (!testDesc.isDisabled) {
+                    launch {
+                        test("${testDesc.author} №${testDesc.number}") {
+                            val expectedResult = ExpectedResult.parse(testDesc.stringToProcessed)
 
-            if (testDescValidateResult.isValid) {
-                TestDesc.parseFromFile(testDescFile).forAll { testDesc ->
+                            val actualResult = docParser.parse(testDesc.stringToProcessed)
 
-                    if (!testDesc.isDisabled) {
-                        launch {
-                            test("${testDesc.author} №${testDesc.number}") {
-                                val expectedResult = ExpectedResult.parse(testDesc.stringToProcessed)
-
-                                val actualResult = docParser.parse(testDesc.stringToProcessed)
-
-                                assert(expectedResult.match(actualResult)) {
-                                    "${testDesc.commentOnFailure}.\nВходная строка: ${testDesc.stringToProcessed}\nРезультат:${actualResult}"
-                                }
-
+                            assert(expectedResult.match(actualResult)) {
+                                "${testDesc.commentOnFailure}.\nВходная строка: ${testDesc.stringToProcessed}\nРезультат:${actualResult}"
                             }
+
                         }
                     }
                 }

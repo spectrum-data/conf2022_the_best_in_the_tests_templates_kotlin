@@ -1,3 +1,4 @@
+/*
 package codes.spectrum.conf2022.base.doc_type.dictionaries
 
 object OKATO : BaseDictionary{
@@ -96,3 +97,4 @@ object OKATO : BaseDictionary{
         """
 }
 
+*/
