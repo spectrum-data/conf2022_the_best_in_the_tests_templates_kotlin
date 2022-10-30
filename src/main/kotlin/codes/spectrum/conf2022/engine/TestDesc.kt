@@ -4,9 +4,9 @@ import java.io.File
 
 /**
  * Описание тестов. Входной файл должен выглядеть так:
- * author \/ number \/ stringToProcessed \/ isDisabled \/ commentOnFailure
- * harisov \/ 1 \/ паспорт Харисов Д.И. 1009 123848==PASSPORT:1009123848 \/ false \/ Не удалось определить корректный паспорт ФЛ
- * harisov \/ 2 \/ Паспорт Харисов Д.И. 10090 123848=?PASSPORT:1009123848 \/ false \/ Не удалось определить некорректный паспорт ФЛ
+ * author | number | stringToProcessed | isDisabled | commentOnFailure
+ * harisov | 1 | паспорт Харисов Д.И. 1009 123848==PASSPORT:1009123848 | false | Не удалось определить корректный паспорт ФЛ
+ * harisov | 2 | Паспорт Харисов Д.И. 10090 123848=?PASSPORT:1009123848 | false | Не удалось определить некорректный паспорт ФЛ
  *
  * */
 
@@ -26,8 +26,8 @@ data class TestDesc(
     )
 
     companion object {
-        const val DEFAULT_HEADER = "author\\/number\\/stringToProcessed\\/isDisabled\\/commentOnFailure"
-        const val DEFAULT_COLUMN_DELIMITER = "\\/"
+        const val DEFAULT_HEADER = "author|number|stringToProcessed|isDisabled|commentOnFailure"
+        const val DEFAULT_COLUMN_DELIMITER = "|"
 
         private val expectedDelimiterCount: Int = DEFAULT_HEADER.split(DEFAULT_COLUMN_DELIMITER).size - 1
 

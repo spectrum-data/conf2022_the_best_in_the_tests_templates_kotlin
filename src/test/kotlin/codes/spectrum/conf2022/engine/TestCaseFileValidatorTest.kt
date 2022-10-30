@@ -100,7 +100,7 @@ class TestCaseFileValidatorTest : FunSpec() {
             testValidate(
                 testName = "Не не парсится номер теста - не валиден, сообщение с указанием номера некорректной строки",
                 actualFileLines = listOf(
-                    "author\\/number\\/stringToProcessed\\/isDisabled\\/commentOnFailure",
+                    DEFAULT_HEADER,
                     listOf(
                         "someAuthor",
                         "someIncorrectNumber",
@@ -120,7 +120,7 @@ class TestCaseFileValidatorTest : FunSpec() {
             testValidate(
                 testName = "Не не парсится disable флаг теста - не валиден, сообщение с указанием номера некорректной строки",
                 actualFileLines = listOf(
-                    "author\\/number\\/stringToProcessed\\/isDisabled\\/commentOnFailure",
+                    DEFAULT_HEADER,
                     listOf(
                         "someAuthor",
                         "1",

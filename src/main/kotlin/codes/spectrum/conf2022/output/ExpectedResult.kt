@@ -45,11 +45,11 @@ data class ExpectedResult(
     fun match(actual: List<ExtractedDocument>): Boolean {
         val doCountsEqual = actual.count() == expected.count()
 
-
         return when {
             isExactly && isOrderRequired -> {
                 doCountsEqual && actual.zip(expected).all { (a, b) -> a == b }
             }
+
             isExactly && !isOrderRequired -> {
                 doCountsEqual && actual.containsAll(expected)
             }
@@ -84,14 +84,14 @@ data class ExpectedResult(
         const val EXPECTED_DOCUMENTS_SEPARATOR = ","
 
         fun parse(input: String): ExpectedResult {
-            val parsedByRegex = INPUT_STRUCTURE_REGEX.toRegex().matchEntire(input)
+            val splitByRegex = INPUT_STRUCTURE_REGEX.toRegex().matchEntire(input)
 
-            check(parsedByRegex != null && parsedByRegex.groupValues.count() == 4) {
+            check(splitByRegex != null && splitByRegex.groupValues.count() == 4) {
                 "Входная строка '$input' не соответствует структуре '$INPUT_STRUCTURE_REGEX'"
             }
 
-            val filledConstraints = createAndFillConstraints(parsedByRegex.groupValues[2])
-            val parseExpectedDocs = parseExpectedDocs(parsedByRegex.groupValues[3])
+            val filledConstraints = createAndFillConstraints(splitByRegex.groupValues[2])
+            val parseExpectedDocs = parseExpectedDocs(splitByRegex.groupValues[3])
 
             return filledConstraints.copy(expected = parseExpectedDocs)
         }
@@ -100,10 +100,23 @@ data class ExpectedResult(
             return input.split(EXPECTED_DOCUMENTS_SEPARATOR).map { expectedDocDesc ->
                 expectedDocDesc.split(":")
                     .let {
-                        ExtractedDocument(
-                            docType = DocType.valueOf(it[0].trim()),
-                            value = it.getOrElse(1) { "" }.trim().replace(Regex("\\s"), "")
-                        )
+                        val value = it.getOrElse(1) { "" }.trim().replace(Regex("\\s"), "")
+
+                        if (it[0].startsWith(INVALID_DOC_PREFIX)) {
+                            ExtractedDocument(
+                                docType = DocType.valueOf(it[0].drop(1).uppercase().trim()),
+                                isValid = false,
+
+                                value = value,
+                            )
+                        } else {
+                            ExtractedDocument(
+                                docType = DocType.valueOf(it[0].uppercase().trim()),
+                                isValid = true,
+
+                                value = value,
+                            )
+                        }
                     }
             }
         }
@@ -116,21 +129,33 @@ data class ExpectedResult(
                 "==" -> {
                     isExactly = true; isOrderRequired = true
                 }
+
                 "~=" -> {
                     isExactly = false; isOrderRequired = true
                 }
+
                 "=?" -> {
                     isExactly = true; isOrderRequired = false
                 }
+
                 "~?" -> {
                     isExactly = false; isOrderRequired = false
                 }
-                else -> error("не ожиданное обозначение ограничений в описании теста - $constraints")
+
+                else -> error("неожиданное обозначение ограничений в описании теста - $constraints")
             }
 
             return ExpectedResult(isExactly = isExactly, isOrderRequired = isOrderRequired)
         }
 
-        private const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]+?)(\\b[=?~]{2}\\b)([\\s\\S]+?)\$"
+        /**
+         * Префикс документа - номер документа не валиден
+         * */
+        const val INVALID_DOC_PREFIX = "!"
+
+        /**
+         *
+         * */
+        private const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]+?)([=?~]{2})([\\s\\S]+?)\$"
     }
 }

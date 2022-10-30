@@ -1,6 +1,7 @@
 package codes.spectrum.conf2022.output
 
 import codes.spectrum.conf2022.doc_type.DocType
+import codes.spectrum.conf2022.output.ExpectedResult.Companion.INVALID_DOC_PREFIX
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
 import io.kotest.inspectors.forAll
@@ -85,7 +86,7 @@ class ExpectedResultTest : FunSpec() {
                 }
 
                 parsingTest(
-                    input = "$correctInput${correctConstraints}" + "INN_UL, PASSPORT_RF",
+                    input = "иннЮЛ, паспорт России" + correctConstraints + "INN_UL, PASSPORT_RF",
                     expectedParsedDocs = listOf(
                         ExtractedDocument(docType = DocType.INN_UL, value = ""),
                         ExtractedDocument(docType = DocType.PASSPORT_RF, value = ""),
@@ -94,7 +95,7 @@ class ExpectedResultTest : FunSpec() {
                 )
 
                 parsingTest(
-                    input = "$correctInput${correctConstraints}" + "INN_UL:0123456789, PASSPORT_RF",
+                    input = "инн ЮЛ 0123456789, паспортРФ" + correctConstraints + "INN_Ul:0123456789, PASSPORT_RF",
                     expectedParsedDocs = listOf(
                         ExtractedDocument(docType = DocType.INN_UL, value = "0123456789"),
                         ExtractedDocument(docType = DocType.PASSPORT_RF, value = ""),
@@ -103,7 +104,7 @@ class ExpectedResultTest : FunSpec() {
                 )
 
                 parsingTest(
-                    input = "$correctInput${correctConstraints}" + "INN_UL:0123456789, PASSPORT_RF:9876543210",
+                    input = "ООО Рога и Копыта - 0123456789, Иванов И.И. 9876543210" + correctConstraints + "INN_UL:0123456789, PASSPORT_RF:9876543210",
                     expectedParsedDocs = listOf(
                         ExtractedDocument(docType = DocType.INN_UL, value = "0123456789"),
                         ExtractedDocument(docType = DocType.PASSPORT_RF, value = "9876543210"),
@@ -112,11 +113,19 @@ class ExpectedResultTest : FunSpec() {
                 )
 
                 parsingTest(
-                    input = "$correctInput${correctConstraints}" + "PASSPORT_RF: 0123456789 ",
+                    input = "паспортРФ-0123456789" + correctConstraints + "PASSPORT_RF: 0123456789 ",
                     expectedParsedDocs = listOf(
                         ExtractedDocument(docType = DocType.PASSPORT_RF, value = "0123456789"),
                     ),
                     testName = "проверка на трим значения"
+                )
+
+                parsingTest(
+                    input = "паспорт рф01234567890" + correctConstraints + "${INVALID_DOC_PREFIX}PASSPORT_RF:01234567890",
+                    expectedParsedDocs = listOf(
+                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = "01234567890", isValid = false),
+                    ),
+                    testName = "умеет распознавать признак некорректности документа"
                 )
             }
         }
@@ -171,7 +180,7 @@ class ExpectedResultTest : FunSpec() {
                             matchTest(
                                 testName = "Содержит ожидаемый набор в ожидаемом порядке и ДОП. элемент - ${if (baseExpectedResult.isExactly) "не" else ""} соответствует результату",
                                 expectedResult = baseExpectedResult.copy(expected = listOf(someDoc, anotherSomeDoc)),
-                                actualExtractedDocs = listOf(someDoc, ExtractedDocument(), anotherSomeDoc,),
+                                actualExtractedDocs = listOf(someDoc, ExtractedDocument(), anotherSomeDoc),
                                 expectedMatchResult = !baseExpectedResult.isExactly,
                             )
 
