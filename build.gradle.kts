@@ -22,6 +22,16 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.withType<Test> {
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+
+        showExceptions = true
+        showCauses = false
+        showStackTraces = false
+    }
+}
+
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "11"
 }
