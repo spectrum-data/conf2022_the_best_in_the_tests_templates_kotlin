@@ -4,7 +4,7 @@ import java.io.File
 
 /**
  * Описание тестов. Входной файл должен выглядеть так:
- * author | number | stringToProcessed | isDisabled | commentOnFailure
+ * author | number | stringToProcessed | isDisabled | commentOnFailure | publishTime
  * harisov | 1 | паспорт Харисов Д.И. 1009 123848==PASSPORT:1009123848 | false | Не удалось определить корректный паспорт ФЛ
  * harisov | 2 | Паспорт Харисов Д.И. 10090 123848=?PASSPORT:1009123848 | false | Не удалось определить некорректный паспорт ФЛ
  *
@@ -26,7 +26,7 @@ data class TestDesc(
     )
 
     companion object {
-        const val DEFAULT_HEADER = "author|number|stringToProcessed|isDisabled|commentOnFailure"
+        const val DEFAULT_HEADER = "author|number|stringToProcessed|isDisabled|commentOnFailure|publishTime"
         const val DEFAULT_COLUMN_DELIMITER = "|"
 
         private val expectedDelimiterCount: Int = DEFAULT_HEADER.split(DEFAULT_COLUMN_DELIMITER).size - 1
@@ -41,6 +41,16 @@ data class TestDesc(
         fun validate(fileToValidate: File): TestDescFileValidateResult {
             val errorMessages = mutableListOf<String>()
             val testIdToLineNumber = mutableMapOf<String, Int>()
+
+            fun validateHeader(header: String): List<String> {
+                val headersErrors = mutableListOf<String>()
+
+                val headerWithoutSpaces = header.replace("\\s".toRegex(), "")
+
+                if (headerWithoutSpaces != DEFAULT_HEADER) headersErrors.add("Файл с описанием тест-кейсов не содержит ожидаемый заголовок '$DEFAULT_HEADER'")
+
+                return headersErrors
+            }
 
             fun validateLine(line: String, lineIndex: Int): List<String> {
                 val splitLine = line.split(DEFAULT_COLUMN_DELIMITER)
@@ -63,10 +73,10 @@ data class TestDesc(
                             testIdToLineNumber[testId] = lineNumber
                         }
 
-                        if (!splitLine[1].all { it.isDigit() })
+                        if (!splitLine[1].trim().all { it.isDigit() })
                             add("В строке с номером $lineNumber сегмент с номеров некорректно заполнен: ${splitLine[1]}")
 
-                        if (splitLine[3].lowercase().toBooleanStrictOrNull() == null)
+                        if (splitLine[3].trim().lowercase().toBooleanStrictOrNull() == null)
                             add("В строке с номером $lineNumber сегмент isDisabled некорректно заполнен: ${splitLine[3]}")
                     }
                 }
@@ -75,8 +85,10 @@ data class TestDesc(
             fileToValidate.reader().useLines {
                 it.forEachIndexed { index, line ->
                     try {
-                        if (index == 0) errorMessages.addAll(validateHeader(line))
-                        else if (line.isNotBlank()) errorMessages.addAll(validateLine(line, index))
+                        val trimLine = line.trim()
+
+                        if (index == 0) errorMessages.addAll(validateHeader(trimLine))
+                        else if (trimLine.isNotBlank()) errorMessages.addAll(validateLine(trimLine, index))
                     } catch (t: Throwable) {
                         errorMessages.add("При обработке строки с номером $index произошла ошибка: ${t.message}")
                     }
@@ -88,15 +100,6 @@ data class TestDesc(
                 errorMessages = errorMessages
             )
         }
-
-        private fun validateHeader(header: String): List<String> {
-            val errorMessages = mutableListOf<String>()
-
-            if (header != DEFAULT_HEADER) errorMessages.add("Файл с описанием тест-кейсов не содержит ожидаемый заголовок '$DEFAULT_HEADER'")
-
-            return errorMessages
-        }
-
 
         /**
          * Парсит входной файл в список описаний тестов
