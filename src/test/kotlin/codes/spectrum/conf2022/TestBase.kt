@@ -1,6 +1,7 @@
 package codes.spectrum.conf2022
 
 import codes.spectrum.conf2022.engine.TestDesc
+import codes.spectrum.conf2022.engine.TestDesc.Companion.extractTestDescriptions
 import codes.spectrum.conf2022.input.IDocParser
 import codes.spectrum.conf2022.output.ExpectedResult
 import codes.spectrum.conf2022.output.ExtractedDocument
@@ -15,17 +16,17 @@ data class TestStatistics(
     /**
      * Пройдены ли базовые тесты
      * */
-    val isBasePass: Boolean,
+    var isBasePass: Boolean,
 
     /**
      * Результаты запуска своих тестов
      * */
-    val localResult: List<TestResult>,
+    val localResults: MutableList<TestResult>,
 
     /**
      * Результаты запуска общих тестов
      * */
-    val mainResult: List<TestResult>
+    val mainResults: MutableList<TestResult>
 )
 
 /**
@@ -57,10 +58,19 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * */
     lateinit var statistics: TestStatistics
 
+    /** Набор описаний базовых тестов */
+    private lateinit var baseTests: List<TestDesc>
+
+    /** Набор описаний локальных тестов */
+    private lateinit var localTests: List<TestDesc>
+
+    /** Набор описаний общих тестов */
+    private lateinit var mainTests: List<TestDesc>
+
     /**
      * Логин участника
      * */
-    val MY_LOGIN: String by lazy { "LOKBUGS" }
+    val MY_LOGIN: String by lazy { "harisov" }
 
     /**
      * Экземпляр парсера, который необходимо реализовать участникам
@@ -71,7 +81,79 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         }
     }
 
-    suspend fun FunSpecContainerContext.runTest(
+    init {
+        validateFiles()
+
+        baseTests = getBaseFile()?.extractTestDescriptions() ?: emptyList()
+        localTests = getLocalFile()?.extractTestDescriptions() ?: emptyList()
+        mainTests = getMainFile()?.extractTestDescriptions() ?: emptyList()
+
+        val statistics =
+            TestStatistics(isBasePass = true, localResults = mutableListOf(), mainResults = mutableListOf())
+
+        context("Базовый функционал - базовые тесты") {
+            baseTests.forEach { testDesc ->
+                runTest(testDesc) { isMatch ->
+                    if (!isMatch)
+                        statistics.isBasePass = false
+                }
+            }
+        }
+
+        context("Запуск локальных тестов") {
+            localTests.forEach { testDesc ->
+                runTest(testDesc) { isMatch ->
+                    statistics.localResults.add(
+                        TestResult(
+                            author = testDesc.author,
+                            stringToProcessed = testDesc.stringToProcessed,
+                            isPass = isMatch
+                        )
+                    )
+                }
+            }
+        }
+
+        mainTests.groupBy { it.author }.forEach { authorToTests ->
+            // В общих могут присутствовать тесты автора - исключим те, которые уже запускали
+            if (authorToTests.key.lowercase() == MY_LOGIN.lowercase()) {
+                context("Запуск своих тестов, которые есть в общих, но которых нет в локальном файле") {
+                    authorToTests.value.forEach { testDesc ->
+                        if (testDesc.stringToProcessed.trim() !in localTests.map { it.stringToProcessed.trim() }) {
+                            runTest(testDesc) { isMatch ->
+                                statistics.localResults.add(
+                                    TestResult(
+                                        author = authorToTests.key,
+                                        stringToProcessed = testDesc.stringToProcessed,
+                                        isPass = isMatch
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                context("Тесты от ${authorToTests.key}") {
+                    authorToTests.value.forEach { testDesc ->
+                        runTest(testDesc) { isMatch ->
+                            statistics.mainResults.add(
+                                TestResult(
+                                    author = authorToTests.key,
+                                    stringToProcessed = testDesc.stringToProcessed,
+                                    isPass = isMatch
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Запустить тест по его описанию
+     * */
+    private suspend fun FunSpecContainerContext.runTest(
         testDesc: TestDesc,
         matchProcess: (Boolean) -> Unit
     ) {
@@ -96,95 +178,36 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         }
     }
 
-    init {
-        filesToProcess.forEach { file ->
-            val validateResult = TestDesc.validate(file)
+    /**
+     * Валидирует входные файлы
+     * */
+    private fun validateFiles(): Unit = filesToProcess.forEach { file ->
+        val validateResult = TestDesc.validate(file)
 
-            if (!validateResult.isValid)
-                error("Файл - ${file.name} не валидный. Ошибки: ${validateResult.errorMessages}")
-        }
-
-        val baseTestFile = filesToProcess.first { it.name == BASE_TEST_FILE_NAME }
-        var isBasePass = true
-
-        val localResults = mutableListOf<TestResult>()
-        val mainResults = mutableListOf<TestResult>()
-
-        context("Базовый функционал - базовые тесты") {
-            val descriptions = TestDesc.parseFromFile(baseTestFile)
-
-            descriptions.forEach { testDesc ->
-                runTest(testDesc) { isMatch ->
-                    if (!isMatch)
-                        isBasePass = false
-                }
-            }
-        }
-
-        val localTestFile = filesToProcess.firstOrNull { it.name == LOCAL_TEST_FILE_NAME }
-
-        if (localTestFile != null) {
-            context("Запуск локальных тестов - файл ${localTestFile.name}") {
-                val descriptions = TestDesc.parseFromFile(localTestFile)
-
-                descriptions.forEach { testDesc ->
-                    runTest(testDesc) { isMatch ->
-                        localResults.add(
-                            TestResult(
-                                author = testDesc.author,
-                                stringToProcessed = testDesc.stringToProcessed,
-                                isPass = isMatch
-                            )
-                        )
-                    }
-                }
-            }
-        }
-
-        val mainTestFile = filesToProcess.firstOrNull { it.name == MAIN_TEST_FILE_NAME }
-
-        if (mainTestFile != null) {
-            val descriptions = TestDesc.parseFromFile(mainTestFile)
-
-            val localsButNotInLocalFile = descriptions.filter { it.author == MY_LOGIN }
-
-            if (localsButNotInLocalFile.isNotEmpty()) {
-                context("Запуск своих тестов, которые есть в ${mainTestFile.name}, но которых нет в ${localTestFile?.name}") {
-                    localsButNotInLocalFile.forEach { testDesc ->
-                        runTest(testDesc) { isMatch ->
-                            localResults.add(
-                                TestResult(
-                                    author = testDesc.author,
-                                    stringToProcessed = testDesc.stringToProcessed,
-                                    isPass = isMatch
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-
-            val otherCompetitor = descriptions.filter { it.author != MY_LOGIN }
-
-            otherCompetitor.groupBy { it.author }.forEach { authorToTests ->
-                context("Тесты от ${authorToTests.key}") {
-                    authorToTests.value.forEach { testDesc ->
-                        runTest(testDesc) { isMatch ->
-                            mainResults.add(
-                                TestResult(
-                                    author = authorToTests.key,
-                                    stringToProcessed = testDesc.stringToProcessed,
-                                    isPass = isMatch
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        statistics = TestStatistics(isBasePass = isBasePass, localResult = localResults, mainResult = mainResults)
+        if (!validateResult.isValid)
+            error("Файл - ${file.name} не валидный. Ошибки: ${validateResult.errorMessages.joinToString("\n")}")
     }
+
+    /**
+     * Получить файл в базовыми тестами
+     * */
+    private fun getBaseFile(): File? = getFileByName(BASE_TEST_FILE_NAME)
+
+    /**
+     * Получить файл с локальными тестами
+     * */
+    private fun getLocalFile(): File? = getFileByName(LOCAL_TEST_FILE_NAME)
+
+    /**
+     * Получить файл с общими тестами
+     * */
+    private fun getMainFile(): File? = getFileByName(MAIN_TEST_FILE_NAME)
+
+    /**
+     * Получить файл по названию из списка файлов на обработку
+     * */
+    private fun getFileByName(name: String): File? =
+        filesToProcess.firstOrNull { it.name.lowercase() == name.lowercase() }
 
     companion object {
 

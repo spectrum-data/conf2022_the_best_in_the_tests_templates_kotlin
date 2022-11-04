@@ -107,6 +107,11 @@ data class TestDesc(
         }
 
         /**
+         * Парсит файл в список описаний тестов
+         * */
+        fun File.extractTestDescriptions() : List<TestDesc> = parseFromFile(this)
+
+        /**
          * Парсит входной файл в список описаний тестов
          * */
         fun parseFromFile(file: File): List<TestDesc> {
