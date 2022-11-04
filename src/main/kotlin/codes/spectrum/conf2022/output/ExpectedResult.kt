@@ -154,8 +154,8 @@ data class ExpectedResult(
         const val INVALID_DOC_PREFIX = "!"
 
         /**
-         *
+         * Регулярное выражение структуры описания теста
          * */
-        private const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]+?)([=?~]{2})([\\s\\S]+?)\$"
+        const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]+?[^~=?]+)(==|~=|=\\?|~\\?)([^~=?]+[\\s\\S]+?)\$"
     }
 }

@@ -1,6 +1,7 @@
 package codes.spectrum.conf2022.output
 
 import codes.spectrum.conf2022.doc_type.DocType
+import codes.spectrum.conf2022.output.ExpectedResult.Companion.INPUT_STRUCTURE_REGEX
 import codes.spectrum.conf2022.output.ExpectedResult.Companion.INVALID_DOC_PREFIX
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
@@ -127,6 +128,24 @@ class ExpectedResultTest : FunSpec() {
                     ),
                     testName = "умеет распознавать признак некорректности документа"
                 )
+            }
+
+            context("Тесты на регулярку структуры описания теста"){
+                val inputRegex = INPUT_STRUCTURE_REGEX.toRegex()
+
+                test("Корректные ограничения на вхождение - проходит регулярку") {
+                    inputRegex.matches("паспорт рф==PASSPORT_RF").shouldBeTrue()
+                    inputRegex.matches("паспорт рф~=PASSPORT_RF").shouldBeTrue()
+                    inputRegex.matches("паспорт рф=?PASSPORT_RF").shouldBeTrue()
+                    inputRegex.matches("паспорт рф~?PASSPORT_RF").shouldBeTrue()
+                }
+
+                test("Затроенные символы ограничения на вхождение - непроходит регулярку") {
+                    inputRegex.matches("паспорт рф===PASSPORT_RF").shouldBeFalse()
+                    inputRegex.matches("паспорт рф~==PASSPORT_RF").shouldBeFalse()
+                    inputRegex.matches("паспорт рф=??PASSPORT_RF").shouldBeFalse()
+                    inputRegex.matches("паспорт рф~??PASSPORT_RF").shouldBeFalse()
+                }
             }
         }
 

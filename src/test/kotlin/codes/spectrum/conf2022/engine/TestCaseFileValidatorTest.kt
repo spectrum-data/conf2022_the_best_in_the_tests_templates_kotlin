@@ -1,6 +1,7 @@
 package codes.spectrum.conf2022.engine
 
 import codes.spectrum.conf2022.engine.TestDesc.Companion.DEFAULT_HEADER
+import codes.spectrum.conf2022.output.ExpectedResult
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
 import io.kotest.matchers.shouldBe
@@ -42,6 +43,7 @@ class TestCaseFileValidatorTest : FunSpec() {
     init {
         context("Дефолтные хедер и разделитель") {
             val defaultHeaderDelimiterCount = DEFAULT_HEADER.split(DEFAULT_DELIMITER).size - 1
+            val correctInputString = "Паспорт РФ 1234567890==PASSPORT_RF:1234567890"
 
             testValidate(
                 testName = "файл содержит только ожидаемый - файл валиден",
@@ -65,9 +67,10 @@ class TestCaseFileValidatorTest : FunSpec() {
                     listOf(
                         "someAuthor",
                         "1",
-                        "stringToProcessed",
+                        correctInputString,
                         "true",
-                        "someComment"
+                        "someComment",
+                        ""
                     ).joinToString(DEFAULT_DELIMITER),
                 ),
                 expectedValidateResult = TestDesc.TestDescFileValidateResult(
@@ -78,9 +81,10 @@ class TestCaseFileValidatorTest : FunSpec() {
             val incorrectDelimiterCountLine = listOf(
                 "someAuthor",
                 "1",
-                "stringToProcessed",
+                correctInputString,
                 "true",
-                "someComment"
+                "someComment",
+                ""
             ).joinToString(DEFAULT_DELIMITER) + DEFAULT_DELIMITER
 
             testValidate(
@@ -98,15 +102,37 @@ class TestCaseFileValidatorTest : FunSpec() {
             )
 
             testValidate(
+                testName = "входная строка не соответствует не соответствует структуре ${ExpectedResult.INPUT_STRUCTURE_REGEX} - не валиден",
+                actualFileLines = listOf(
+                    DEFAULT_HEADER,
+                    listOf(
+                        "someAuthor",
+                        "1",
+                        "incorrect_input_string==?unknown doc",
+                        "true",
+                        "someComment",
+                        ""
+                    ).joinToString(DEFAULT_DELIMITER)
+                ),
+                expectedValidateResult = TestDesc.TestDescFileValidateResult(
+                    isValid = false,
+                    errorMessages = listOf(
+                        "В строке с номером 2 входная строка не соответствует необходимой структуре - ${ExpectedResult.INPUT_STRUCTURE_REGEX}"
+                    )
+                )
+            )
+
+            testValidate(
                 testName = "Не не парсится номер теста - не валиден, сообщение с указанием номера некорректной строки",
                 actualFileLines = listOf(
                     DEFAULT_HEADER,
                     listOf(
                         "someAuthor",
                         "someIncorrectNumber",
-                        "stringToProcessed",
+                        correctInputString,
                         "true",
-                        "someComment"
+                        "someComment",
+                        ""
                     ).joinToString(DEFAULT_DELIMITER)
                 ),
                 expectedValidateResult = TestDesc.TestDescFileValidateResult(
@@ -124,9 +150,10 @@ class TestCaseFileValidatorTest : FunSpec() {
                     listOf(
                         "someAuthor",
                         "1",
-                        "stringToProcessed",
+                        correctInputString,
                         "someIncorrectBooleanValue",
-                        "someComment"
+                        "someComment",
+                        ""
                     ).joinToString(DEFAULT_DELIMITER)
                 ),
                 expectedValidateResult = TestDesc.TestDescFileValidateResult(
@@ -145,17 +172,19 @@ class TestCaseFileValidatorTest : FunSpec() {
                     listOf(
                         "someAuthor",
                         "1",
-                        "someStringToPrecessed",
+                        correctInputString,
                         "true",
-                        "someComment"
+                        "someComment",
+                        ""
                     ).joinToString(DEFAULT_DELIMITER),
 
                     listOf(
                         "someAuthor",
                         "1",
-                        "anotherStringToPrecessed",
+                        correctInputString,
                         "false",
-                        "anotherComment"
+                        "anotherComment",
+                        ""
                     ).joinToString(DEFAULT_DELIMITER),
                 ),
                 expectedValidateResult = TestDesc.TestDescFileValidateResult(

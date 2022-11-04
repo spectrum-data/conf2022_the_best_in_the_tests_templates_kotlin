@@ -1,5 +1,6 @@
 package codes.spectrum.conf2022.engine
 
+import codes.spectrum.conf2022.output.ExpectedResult
 import java.io.File
 
 /**
@@ -64,13 +65,17 @@ data class TestDesc(
                     } else {
                         val testId = "${splitLine[0]}${splitLine[1]}"
 
-
                         if (testIdToLineNumber.containsKey(testId)) {
                             add(
                                 "В строках с номерами ${testIdToLineNumber[testId]} и $lineNumber совпадает связка author+number"
                             )
                         } else {
                             testIdToLineNumber[testId] = lineNumber
+                        }
+
+                        if (!ExpectedResult.INPUT_STRUCTURE_REGEX.toRegex().matches(splitLine[2])) {
+                            add("В строке с номером $lineNumber входная строка не соответствует необходимой структуре - ${ExpectedResult.INPUT_STRUCTURE_REGEX}")
+
                         }
 
                         if (!splitLine[1].trim().all { it.isDigit() })
