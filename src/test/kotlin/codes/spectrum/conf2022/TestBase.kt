@@ -185,7 +185,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
                 }
                 appendLineAndPrint("")
 
-                appendLine("#####FULL_INFO")
+                appendLine("##### FULL_INFO")
                 statistics.localResults.forEach { appendTestResult(it) }
                 groupedOtherMemberTests.forEach { authorToTests ->
                     authorToTests.value.forEach { appendTestResult(it) }
