@@ -3,51 +3,15 @@ package codes.spectrum.conf2022
 import codes.spectrum.conf2022.engine.TestDesc
 import codes.spectrum.conf2022.engine.TestDesc.Companion.extractTestDescriptions
 import codes.spectrum.conf2022.input.IDocParser
+import codes.spectrum.conf2022.input.RandomSuccessfulParser
 import codes.spectrum.conf2022.output.ExpectedResult
 import codes.spectrum.conf2022.output.ExtractedDocument
+import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
+import java.io.BufferedWriter
 import java.io.File
-
-/**
- * Статистика запуска тестов
- * */
-data class TestStatistics(
-    /**
-     * Пройдены ли базовые тесты
-     * */
-    var isBasePass: Boolean,
-
-    /**
-     * Результаты запуска своих тестов
-     * */
-    val localResults: MutableList<TestResult>,
-
-    /**
-     * Результаты запуска общих тестов
-     * */
-    val mainResults: MutableList<TestResult>
-)
-
-/**
- * Результат запуска теста
- * */
-data class TestResult(
-    /**
-     * Автор теста
-     * */
-    val author: String,
-
-    /**
-     * Строка для обработки
-     * */
-    val stringToProcessed: String,
-
-    /**
-     * Пройден ли тест
-     * */
-    val isPass: Boolean
-)
+import java.io.OutputStreamWriter
 
 /**
  * Базовый спек для запуска тестов. Работает с описанями тестов в формате csv-файлов.
@@ -67,18 +31,26 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /** Набор описаний общих тестов */
     private lateinit var mainTests: List<TestDesc>
 
+
+    // TODO("вернуть TODO здесь")
     /**
      * Логин участника
      * */
-    val MY_LOGIN: String by lazy { "harisov" }
+    val MY_LOGIN: String by lazy { "lokbugs" }
 
     /**
      * Экземпляр парсера, который необходимо реализовать участникам
      * */
-    val docParser = object : IDocParser {
-        override fun parse(input: String): List<ExtractedDocument> {
-            return emptyList()
-        }
+    val docParser = RandomSuccessfulParser()
+
+//        object : IDocParser {
+//        override fun parse(input: String): List<ExtractedDocument> {
+//            return emptyList()
+//        }
+//    }
+
+    override fun afterSpec(spec: Spec) {
+        makeReport()
     }
 
     init {
@@ -88,8 +60,13 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         localTests = getLocalFile()?.extractTestDescriptions() ?: emptyList()
         mainTests = getMainFile()?.extractTestDescriptions() ?: emptyList()
 
-        val statistics =
-            TestStatistics(isBasePass = true, localResults = mutableListOf(), mainResults = mutableListOf())
+        statistics =
+            TestStatistics(
+                ownerLogin = MY_LOGIN,
+                isBasePass = true,
+                localResults = mutableListOf(),
+                mainResults = mutableListOf()
+            )
 
         context("Базовый функционал - базовые тесты") {
             baseTests.forEach { testDesc ->
@@ -179,6 +156,47 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     }
 
     /**
+     * Создает файл с отчетом + выводит отчет в консоль.
+     * */
+    private fun makeReport(): File {
+        fun OutputStreamWriter.appendLineAndPrint(line: String) = appendLine(line.also { println(it) })
+        fun OutputStreamWriter.appendTestResult(testResult: TestResult) =
+            appendLine("${testResult.author}|${testResult.stringToProcessed}|${testResult.isPass}")
+
+        val resultFile = File(PROJECT_ROOT_DIR, REPORT_FILE_NAME).also { it.createNewFile() }
+
+        resultFile.writer().use { writer ->
+            with(writer) {
+                appendLineAndPrint("##### Owner`s login:${statistics.ownerLogin}")
+                appendLineAndPrint("##### All basic tests were${if (statistics.isBasePass) "" else " NOT"} passed")
+                appendLineAndPrint("")
+
+                val ownPassedTests = statistics.localResults.filter { it.isPass }
+
+                appendLineAndPrint("##### Your own tests: ${ownPassedTests.count()}/${statistics.localResults.count()}")
+                appendLineAndPrint("##### So, ${ownPassedTests.count()} test(s) can get you points")
+                appendLineAndPrint("")
+
+                val groupedOtherMemberTests = statistics.mainResults.groupBy { it.author }
+
+                appendLineAndPrint("##### Competitors:")
+                groupedOtherMemberTests.forEach { authorToTests ->
+                    appendLineAndPrint("###### ${authorToTests.key}: you passed ${authorToTests.value.count { it.isPass }}/${authorToTests.value.count()}")
+                }
+                appendLineAndPrint("")
+
+                appendLine("#####FULL_INFO")
+                statistics.localResults.forEach { appendTestResult(it) }
+                groupedOtherMemberTests.forEach { authorToTests ->
+                    authorToTests.value.forEach { appendTestResult(it) }
+                }
+            }
+        }
+
+        return resultFile
+    }
+
+    /**
      * Валидирует входные файлы
      * */
     private fun validateFiles(): Unit = filesToProcess.forEach { file ->
@@ -232,5 +250,10 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
          * Название файла с общими тестами
          * */
         val MAIN_TEST_FILE_NAME = "main.csv"
+
+        /**
+         * Название файла с отчетом
+         * */
+        val REPORT_FILE_NAME = "report.md"
     }
 }
