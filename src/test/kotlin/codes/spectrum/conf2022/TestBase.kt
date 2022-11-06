@@ -160,8 +160,12 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * */
     private fun makeReport(): File {
         fun OutputStreamWriter.appendLineAndPrint(line: String) = appendLine(line.also { println(it) })
-        fun OutputStreamWriter.appendTestResult(testResult: TestResult) =
-            appendLine("${testResult.author}|${testResult.stringToProcessed}|${testResult.isPass}")
+        fun OutputStreamWriter.appendTestResult(testResult: TestResult) {
+            val splitStringToProcessed =
+                ExpectedResult.INPUT_STRUCTURE_REGEX.toRegex().matchEntire(testResult.stringToProcessed)
+
+            appendLine("|${testResult.author}|${splitStringToProcessed!!.groupValues[1]}|${splitStringToProcessed!!.groupValues[2]}${splitStringToProcessed!!.groupValues[3]}|${testResult.isPass}|")
+        }
 
         val resultFile = File(PROJECT_ROOT_DIR, REPORT_FILE_NAME).also { it.createNewFile() }
 
@@ -186,9 +190,13 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
                 appendLineAndPrint("")
 
                 appendLine("##### FULL_INFO")
+                appendLine("|author|input|expected|result|")
+                appendLine("|-----|-----|-----|-----|")
                 statistics.localResults.forEach { appendTestResult(it) }
                 groupedOtherMemberTests.forEach { authorToTests ->
-                    authorToTests.value.forEach { appendTestResult(it) }
+                    authorToTests.value.forEach {
+                        appendTestResult(it)
+                    }
                 }
             }
         }
