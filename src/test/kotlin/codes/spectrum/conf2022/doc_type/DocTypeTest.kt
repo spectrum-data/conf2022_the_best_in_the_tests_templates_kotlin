@@ -8,7 +8,7 @@ import io.kotest.matchers.shouldBe
 class DocTypeTest : FunSpec() {
     suspend fun FunSpecContainerContext.testNormaliseRegex(testName: String, doc: ExtractedDocument, isMatch: Boolean) {
         test(testName) {
-            getNormaliseValueRegex(doc.docType).matches(doc.value) shouldBe isMatch
+            doc.isNormal() shouldBe isMatch
         }
     }
 
