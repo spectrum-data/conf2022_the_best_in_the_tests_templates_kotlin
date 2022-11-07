@@ -35,9 +35,14 @@ data class TestResult(
     val author: String,
 
     /**
-     * Строка для обработки
-     * */
-    val stringToProcessed: String,
+     * Входная строка
+     */
+    val input: String = "",
+
+    /**
+     * Ожидаемый результат
+     */
+    val expected: String = "",
 
     /**
      * Пройден ли тест

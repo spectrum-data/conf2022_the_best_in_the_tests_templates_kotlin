@@ -47,11 +47,11 @@ data class ExpectedResult(
 
         return when {
             isExactly && isOrderRequired -> {
-                doCountsEqual && actual.zip(expected).all { (a, b) -> a == b }
+                doCountsEqual && expected.zip(actual).all { (expectedDoc, actualDoc) -> expectedDoc.match(actualDoc) }
             }
 
             isExactly && !isOrderRequired -> {
-                doCountsEqual && actual.containsAll(expected)
+                doCountsEqual && actual.all { actualDoc -> expected.any { expectedDoc -> expectedDoc.match(actualDoc) } }
             }
 
             /**
@@ -64,13 +64,20 @@ data class ExpectedResult(
                 val actualIterator = actual.iterator()
 
                 while (actualIterator.hasNext() && subsequenceIndex < expected.size) {
-                    if (actualIterator.next() == expected[subsequenceIndex]) subsequenceIndex += 1
+                    if (expected[subsequenceIndex].match(actualIterator.next())) subsequenceIndex += 1
                 }
 
                 return subsequenceIndex == expected.size
             }
 
-            !isExactly && !isOrderRequired -> actual.containsAll(expected)
+            !isExactly && !isOrderRequired -> expected.all { expectedDoc ->
+                actual.any { actualDoc ->
+                    expectedDoc.match(
+                        actualDoc
+                    )
+                }
+            }
+
             else -> error("Некорректной сконфигурирован ожидаемый результат: $this")
         }
     }
@@ -100,22 +107,34 @@ data class ExpectedResult(
             return input.split(EXPECTED_DOCUMENTS_SEPARATOR).map { expectedDocDesc ->
                 expectedDocDesc.split(":")
                     .let {
-                        val value = it.getOrElse(1) { "" }.trim().replace(Regex("\\s"), "")
+                        val value = it.getOrElse(1) { "" }.trim()
 
-                        if (it[0].startsWith(INVALID_DOC_PREFIX)) {
+                        val trimmedFirstPart = it[0].trim()
+
+                        if (trimmedFirstPart.endsWith(VALID_DOC_SUFFIX)) {
                             ExtractedDocument(
-                                docType = DocType.valueOf(it[0].drop(1).uppercase().trim()),
+                                docType = DocType.valueOf(trimmedFirstPart.dropLast(1).uppercase()),
+                                isValid = true,
+                                isValidSetup = true,
+                                value = value,
+                            )
+                        } else if (trimmedFirstPart.endsWith(INVALID_DOC_SUFFIX)) {
+                            ExtractedDocument(
+                                docType = DocType.valueOf(trimmedFirstPart.dropLast(1).uppercase()),
                                 isValid = false,
-
+                                isValidSetup = true,
                                 value = value,
                             )
                         } else {
                             ExtractedDocument(
-                                docType = DocType.valueOf(it[0].uppercase().trim()),
-                                isValid = true,
-
+                                docType = DocType.valueOf(trimmedFirstPart.uppercase()),
+                                isValidSetup = false,
                                 value = value,
                             )
+                        }
+                    }.also {
+                        if (it.value.isNotBlank() && !it.isNormal()) {
+                            error("Указанный номер - '${it.value}' - не соответствует нормализованному формату ${it.docType.normaliseRegex} для ${it.docType}")
                         }
                     }
             }
@@ -149,13 +168,18 @@ data class ExpectedResult(
         }
 
         /**
-         * Префикс документа - номер документа не валиден
+         * Суфикс валидного документа документа - номер документа валиден
          * */
-        const val INVALID_DOC_PREFIX = "!"
+        const val VALID_DOC_SUFFIX = "+"
+
+        /**
+         * Суфикс не валидного документа документа - номер документа не валиден
+         * */
+        const val INVALID_DOC_SUFFIX = "-"
 
         /**
          * Регулярное выражение структуры описания теста
          * */
-        const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]+?[^~=?]+)(==|~=|=\\?|~\\?)([^~=?]+[\\s\\S]+?)\$"
+        const val INPUT_STRUCTURE_REGEX = "^([\\s\\S]*?[^~=?]+)(==|~=|=\\?|~\\?)([^~=?]+[\\s\\S]+?)\$"
     }
 }

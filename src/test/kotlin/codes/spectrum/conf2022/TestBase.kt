@@ -1,8 +1,8 @@
 package codes.spectrum.conf2022
 
 import codes.spectrum.conf2022.input.TestDesc
-import codes.spectrum.conf2022.input.TestDesc.Companion.extractTestDescriptions
 import codes.spectrum.conf2022.input.RandomSuccessfulParser
+import codes.spectrum.conf2022.input.TestDescParser
 import codes.spectrum.conf2022.output.ExpectedResult
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FunSpec
@@ -35,6 +35,8 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * */
     val MY_LOGIN: String by lazy { "lokbugs" }
 
+    val parserOption: TestDescParser.Options by lazy { TestDescParser.Options(author = MY_LOGIN) }
+
     /**
      * Экземпляр парсера, который необходимо реализовать участникам
      * */
@@ -53,9 +55,9 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     init {
         validateFiles()
 
-        baseTests = getBaseFile()?.extractTestDescriptions() ?: emptyList()
-        localTests = getLocalFile()?.extractTestDescriptions() ?: emptyList()
-        mainTests = getMainFile()?.extractTestDescriptions() ?: emptyList()
+        baseTests = getBaseFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
+        localTests = getLocalFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
+        mainTests = getMainFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
 
         statistics =
             TestStatistics(
@@ -80,7 +82,8 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
                     statistics.localResults.add(
                         TestResult(
                             author = testDesc.author,
-                            stringToProcessed = testDesc.stringToProcessed,
+                            input = testDesc.input,
+                            expected = testDesc.expected,
                             isPass = isMatch
                         )
                     )
@@ -88,32 +91,17 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
             }
         }
 
-        mainTests.groupBy { it.author }.forEach { authorToTests ->
-            // В общих могут присутствовать тесты автора - исключим те, которые уже запускали
-            if (authorToTests.key.lowercase() == MY_LOGIN.lowercase()) {
-                context("Запуск своих тестов, которые есть в общих, но которых нет в локальном файле") {
-                    authorToTests.value.forEach { testDesc ->
-                        if (testDesc.stringToProcessed.trim() !in localTests.map { it.stringToProcessed.trim() }) {
-                            runTest(testDesc) { isMatch ->
-                                statistics.localResults.add(
-                                    TestResult(
-                                        author = authorToTests.key,
-                                        stringToProcessed = testDesc.stringToProcessed,
-                                        isPass = isMatch
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            } else {
+        mainTests.groupBy { it.author }
+            .filter { it.key.lowercase() != MY_LOGIN.lowercase() }
+            .forEach { authorToTests ->
                 context("Тесты от ${authorToTests.key}") {
                     authorToTests.value.forEach { testDesc ->
                         runTest(testDesc) { isMatch ->
                             statistics.mainResults.add(
                                 TestResult(
                                     author = authorToTests.key,
-                                    stringToProcessed = testDesc.stringToProcessed,
+                                    input = testDesc.input,
+                                    expected = testDesc.expected,
                                     isPass = isMatch
                                 )
                             )
@@ -121,7 +109,6 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
                     }
                 }
             }
-        }
     }
 
     /**
@@ -132,10 +119,10 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         matchProcess: (Boolean) -> Unit
     ) {
         if (!testDesc.isDisabled) {
-            val expected = ExpectedResult.parse(testDesc.stringToProcessed)
+            val expected = ExpectedResult.parse(testDesc.expected)
 
-            test("Входная строка - ${testDesc.stringToProcessed}. Ожидаемый список доков - ${expected.expected}") {
-                val actual = docParser.parse(testDesc.stringToProcessed)
+            test("Входная строка - ${testDesc.input}. Ожидаемый список доков - ${expected.expected}") {
+                val actual = docParser.parse(testDesc.input)
                 val isMatch = expected.match(actual)
 
                 matchProcess(isMatch)
@@ -143,7 +130,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
                 assert(isMatch) {
                     buildString {
                         appendLine(testDesc.commentOnFailure)
-                        appendLine("Входная строка - ${testDesc.stringToProcessed}")
+                        appendLine("Входная строка - ${testDesc.input}")
                         appendLine("Ожидаемый список доков - ${expected.expected}")
                         appendLine("Актуальный список доков - $actual")
                     }
@@ -158,10 +145,8 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     private fun makeReport(): File {
         fun OutputStreamWriter.appendLineAndPrint(line: String) = appendLine(line.also { println(it) })
         fun OutputStreamWriter.appendTestResult(testResult: TestResult) {
-            val splitStringToProcessed =
-                ExpectedResult.INPUT_STRUCTURE_REGEX.toRegex().matchEntire(testResult.stringToProcessed)
 
-            appendLine("|${testResult.author}|${splitStringToProcessed!!.groupValues[1]}|${splitStringToProcessed!!.groupValues[2]}${splitStringToProcessed!!.groupValues[3]}|${testResult.isPass}|")
+            appendLine("|${testResult.author}|${testResult.input}|${testResult.expected}|${testResult.isPass}|")
         }
 
         val resultFile = File(PROJECT_ROOT_DIR, REPORT_FILE_NAME).also { it.createNewFile() }
@@ -205,10 +190,10 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * Валидирует входные файлы
      * */
     private fun validateFiles(): Unit = filesToProcess.forEach { file ->
-        val validateResult = TestDesc.validate(file)
+        val parseResult = TestDescParser.parse(file, options = TestDescParser.Options(MY_LOGIN))
 
-        if (!validateResult.isValid)
-            error("Файл - ${file.name} не валидный. Ошибки: ${validateResult.errorMessages.joinToString("\n")}")
+        if (!parseResult.isOk)
+            error("Файл - ${file.name} не валидный. Ошибка: ${parseResult.error}")
     }
 
     /**

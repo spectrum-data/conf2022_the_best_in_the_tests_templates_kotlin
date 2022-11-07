@@ -9,25 +9,27 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ExtractedDocument(
     val docType: DocType = DocType.UNDEFINED,
-    val isValid: Boolean = true,
+    val isValidSetup: Boolean = false,
+    val isValid: Boolean = false,
     val value: String = ""
 ) {
-    override fun equals(other: Any?): Boolean {
-        if (other is ExtractedDocument) {
-            return internalEqual(other as ExtractedDocument)
-        }
+    /**
+     * Проверяет, что переданный документ подходит под данный паттерн
+     * */
+    fun match(comparedAnswer: ExtractedDocument): Boolean {
+        val doTypesEqual = docType == comparedAnswer.docType
 
-        return super.equals(other)
+        val isNeedToCompareNumber = value.isNotBlank()
+        val isNeedToCompareValidation = isValidSetup
+
+        return doTypesEqual
+                && (!isNeedToCompareNumber || value == comparedAnswer.value)
+                && (!isNeedToCompareValidation || isValid == comparedAnswer.isValid)
     }
 
     /**
      * Проверяет, что если проверяется значение - оно должно быть нормализовано
      * */
     fun isNormal(): Boolean = docType.normaliseRegex.matches(value)
-
-    private fun internalEqual(comparedAnswer: ExtractedDocument): Boolean {
-        return comparedAnswer.docType == docType
-                && comparedAnswer.value == value
-    }
 }
 

@@ -2,7 +2,7 @@ package codes.spectrum.conf2022.output
 
 import codes.spectrum.conf2022.doc_type.DocType
 import codes.spectrum.conf2022.output.ExpectedResult.Companion.INPUT_STRUCTURE_REGEX
-import codes.spectrum.conf2022.output.ExpectedResult.Companion.INVALID_DOC_PREFIX
+import io.kotest.assertions.throwables.shouldThrowMessage
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
 import io.kotest.inspectors.forAll
@@ -89,48 +89,105 @@ class ExpectedResultTest : FunSpec() {
                 parsingTest(
                     input = "иннЮЛ, паспорт России" + correctConstraints + "INN_UL, PASSPORT_RF",
                     expectedParsedDocs = listOf(
-                        ExtractedDocument(docType = DocType.INN_UL, value = ""),
-                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = ""),
+                        ExtractedDocument(docType = DocType.INN_UL, value = "", isValidSetup = false),
+                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = "", isValidSetup = false),
                     ),
                     testName = "Документы без значений"
                 )
 
                 parsingTest(
-                    input = "инн ЮЛ 0123456789, паспортРФ" + correctConstraints + "INN_Ul:0123456789, PASSPORT_RF",
+                    input = "инн ЮЛ 0123456789, паспортРФ" + correctConstraints + "INN_Ul+:0123456789, PASSPORT_RF",
                     expectedParsedDocs = listOf(
-                        ExtractedDocument(docType = DocType.INN_UL, value = "0123456789"),
-                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = ""),
+                        ExtractedDocument(
+                            docType = DocType.INN_UL,
+                            value = "0123456789",
+                            isValidSetup = true,
+                            isValid = true
+                        ),
+                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = "", isValidSetup = false),
                     ),
                     testName = "Некоторые документ со значениями, некоторые без"
                 )
 
                 parsingTest(
-                    input = "ООО Рога и Копыта - 0123456789, Иванов И.И. 9876543210" + correctConstraints + "INN_UL:0123456789, PASSPORT_RF:9876543210",
+                    input = "ООО Рога и Копыта - 0123456789, Иванов И.И. 9876543210" + correctConstraints + "INN_UL+:9876543210, PASSPORT_RF-:0123456789",
                     expectedParsedDocs = listOf(
-                        ExtractedDocument(docType = DocType.INN_UL, value = "0123456789"),
-                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = "9876543210"),
+                        ExtractedDocument(
+                            docType = DocType.INN_UL,
+                            value = "9876543210",
+                            isValidSetup = true,
+                            isValid = true
+                        ),
+                        ExtractedDocument(
+                            docType = DocType.PASSPORT_RF,
+                            value = "0123456789",
+                            isValidSetup = true,
+                            isValid = false
+                        ),
                     ),
                     testName = "Все документы со значениями"
                 )
 
                 parsingTest(
-                    input = "паспортРФ-0123456789" + correctConstraints + "PASSPORT_RF: 0123456789 ",
+                    input = "паспортРФ-0123456789" + correctConstraints + "PASSPORT_RF",
                     expectedParsedDocs = listOf(
-                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = "0123456789"),
+                        ExtractedDocument(docType = DocType.PASSPORT_RF, isValidSetup = false),
                     ),
-                    testName = "проверка на трим значения"
+                    testName = "не указана валидация - заполняется флаг, что валидность не установлена"
                 )
 
                 parsingTest(
-                    input = "паспорт рф01234567890" + correctConstraints + "${INVALID_DOC_PREFIX}PASSPORT_RF:01234567890",
+                    input = "паспортРФ-0123456789" + correctConstraints + "PASSPORT_RF+:0123456789",
                     expectedParsedDocs = listOf(
-                        ExtractedDocument(docType = DocType.PASSPORT_RF, value = "01234567890", isValid = false),
+                        ExtractedDocument(
+                            docType = DocType.PASSPORT_RF,
+                            value = "0123456789",
+                            isValidSetup = true,
+                            isValid = true,
+                        ),
                     ),
-                    testName = "умеет распознавать признак некорректности документа"
+                    testName = "указана валидность документа - заполняется флаг, что валидность установлена и что документ валиден"
                 )
+
+                parsingTest(
+                    input = "паспортРФ-0123456789" + correctConstraints + "PASSPORT_RF-:0123456789",
+                    expectedParsedDocs = listOf(
+                        ExtractedDocument(
+                            docType = DocType.PASSPORT_RF,
+                            value = "0123456789",
+                            isValidSetup = true,
+                            isValid = false,
+                        ),
+                    ),
+                    testName = "указана не валидность документа - заполняется флаг, что валидность установлена и что документ не валиден"
+                )
+
+                parsingTest(
+                    input = "паспорт рф01234567890==PASSPORT_RF:0123456789",
+                    expectedParsedDocs = listOf(
+                        ExtractedDocument(
+                            docType = DocType.PASSPORT_RF,
+                            value = "0123456789",
+                            isValidSetup = false,
+                        ),
+                    ),
+                    testName = "Отсутсвует символ валидации и указан номер после двоеточия - всё ок"
+                )
+
+                test("номер документа указан не в нормализованном формате - ошибка") {
+                    val nonNormalisePassportRf = "0123 456789"
+
+                    DocType.PASSPORT_RF.normaliseRegex.matches(nonNormalisePassportRf).shouldBeFalse()
+
+                    val input = "паспорт рф01234567890==PASSPORT_RF:${nonNormalisePassportRf}"
+
+                    shouldThrowMessage("Указанный номер - '0123 456789' - не соответствует нормализованному формату ${DocType.PASSPORT_RF.normaliseRegex} для ${DocType.PASSPORT_RF}") {
+                        ExpectedResult.parse(input)
+                    }
+                }
             }
 
-            context("Тесты на регулярку структуры описания теста"){
+            context("Тесты на регулярку структуры описания теста") {
                 val inputRegex = INPUT_STRUCTURE_REGEX.toRegex()
 
                 test("Корректные ограничения на вхождение - проходит регулярку") {
@@ -222,6 +279,135 @@ class ExpectedResultTest : FunSpec() {
                                 expectedResult = baseExpectedResult.copy(expected = emptyList()),
                                 actualExtractedDocs = listOf(someDoc),
                                 expectedMatchResult = !baseExpectedResult.isExactly,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается только док тайп - результат: доктайп + номер - соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc.copy(
+                                            value = "",
+                                            isValidSetup = false,
+                                            isValid = false,
+                                        )
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        value = "0123456789",
+                                        isValid = true,
+                                        isValidSetup = true
+                                    )
+                                ),
+                                expectedMatchResult = true,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается только док тайп - результат: доктайп не совпадает - не соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        docType = DocType.INN_UL
+                                    )
+                                ),
+                                expectedMatchResult = false,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается док тайп и номер - результат: совпадает доктайп, номер + валидация - соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        isValid = !someDoc.isValid
+                                    )
+                                ),
+                                expectedMatchResult = true,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается док тайп и номер - результат: номер не совпадает - не соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc.copy(isValidSetup = false, isValid = false)
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        value = someDoc.value.dropLast(1)
+                                    )
+                                ),
+                                expectedMatchResult = false,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается док тайп и валидация - результат: номер не совпадает - соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc.copy(value = "", isValidSetup = true, isValid = true)
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        value = someDoc.value.dropLast(1),
+                                        isValid = true
+                                    )
+                                ),
+                                expectedMatchResult = true,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается док тайп и валидация - результат: валидация не совпадает - не соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc.copy(value = "", isValidSetup = true)
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        isValid = !someDoc.isValid
+                                    )
+                                ),
+                                expectedMatchResult = false,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается док тайп, номер и валидация - все совпадает - соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc.copy(value = "0123456789", isValidSetup = true, isValid = true)
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        value = "0123456789",
+                                        isValid = true,
+                                    )
+                                ),
+                                expectedMatchResult = true,
+                            )
+
+                            matchTest(
+                                testName = "Ожидается док тайп, номер и валидация - валидация не совпадает - не соответствует результату",
+                                expectedResult = baseExpectedResult.copy(
+                                    expected = listOf(
+                                        someDoc.copy(value = "0123456789", isValidSetup = true, isValid = true)
+                                    )
+                                ),
+                                actualExtractedDocs = listOf(
+                                    someDoc.copy(
+                                        value = "0123456789",
+                                        isValid = false,
+                                    )
+                                ),
+                                expectedMatchResult = false,
                             )
                         }
                     }
