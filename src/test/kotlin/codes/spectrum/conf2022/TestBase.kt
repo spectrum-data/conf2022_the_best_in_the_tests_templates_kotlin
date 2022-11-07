@@ -1,15 +1,12 @@
 package codes.spectrum.conf2022
 
-import codes.spectrum.conf2022.engine.TestDesc
-import codes.spectrum.conf2022.engine.TestDesc.Companion.extractTestDescriptions
-import codes.spectrum.conf2022.input.IDocParser
+import codes.spectrum.conf2022.input.TestDesc
+import codes.spectrum.conf2022.input.TestDesc.Companion.extractTestDescriptions
 import codes.spectrum.conf2022.input.RandomSuccessfulParser
 import codes.spectrum.conf2022.output.ExpectedResult
-import codes.spectrum.conf2022.output.ExtractedDocument
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
-import java.io.BufferedWriter
 import java.io.File
 import java.io.OutputStreamWriter
 

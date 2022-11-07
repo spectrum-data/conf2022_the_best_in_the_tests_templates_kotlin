@@ -1,6 +1,7 @@
 package codes.spectrum.conf2022.engine
 
-import codes.spectrum.conf2022.engine.TestDesc.Companion.DEFAULT_HEADER
+import codes.spectrum.conf2022.input.TestDesc
+import codes.spectrum.conf2022.input.TestDesc.Companion.DEFAULT_HEADER
 import codes.spectrum.conf2022.output.ExpectedResult
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
@@ -8,7 +9,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.random.Random
-import codes.spectrum.conf2022.engine.TestDesc.Companion.DEFAULT_COLUMN_DELIMITER as DEFAULT_DELIMITER
+import codes.spectrum.conf2022.input.TestDesc.Companion.DEFAULT_COLUMN_DELIMITER as DEFAULT_DELIMITER
 
 
 class TestCaseFileValidatorTest : FunSpec() {
