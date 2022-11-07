@@ -1,6 +1,6 @@
 package codes.spectrum.conf2022
 
-import codes.spectrum.conf2022.engine.TestDesc.Companion.DEFAULT_HEADER
+import codes.spectrum.conf2022.input.TestDesc.Companion.csvHeader
 import java.io.File
 import java.net.URI
 import java.net.http.HttpClient
@@ -63,7 +63,7 @@ class MainTest : TestBase(
 
                 processing.waitFor(2, TimeUnit.SECONDS)
 
-                processing.inputStream.reader().use { result = it.readText().replaceBefore(DEFAULT_HEADER, "") }
+                processing.inputStream.reader().use { result = it.readText().replaceBefore(csvHeader, "") }
             }
 
             return File(PROJECT_ROOT_DIR, MAIN_TEST_FILE_NAME).also {

@@ -24,7 +24,7 @@ tasks.test {
 
 tasks.withType<Test> {
     testLogging {
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
         showExceptions = true
         showCauses = false

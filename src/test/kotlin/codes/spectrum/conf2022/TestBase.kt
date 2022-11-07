@@ -1,9 +1,11 @@
 package codes.spectrum.conf2022
 
+import codes.spectrum.conf2022.input.IDocParser
 import codes.spectrum.conf2022.input.TestDesc
 import codes.spectrum.conf2022.input.RandomSuccessfulParser
 import codes.spectrum.conf2022.input.TestDescParser
 import codes.spectrum.conf2022.output.ExpectedResult
+import codes.spectrum.conf2022.output.ExtractedDocument
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
@@ -40,13 +42,11 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /**
      * Экземпляр парсера, который необходимо реализовать участникам
      * */
-    val docParser = RandomSuccessfulParser()
-
-//        object : IDocParser {
-//        override fun parse(input: String): List<ExtractedDocument> {
-//            return emptyList()
-//        }
-//    }
+    val docParser = object : IDocParser {
+        override fun parse(input: String): List<ExtractedDocument> {
+            return emptyList()
+        }
+    }
 
     override fun afterSpec(spec: Spec) {
         makeReport()
@@ -119,7 +119,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         matchProcess: (Boolean) -> Unit
     ) {
         if (!testDesc.isDisabled) {
-            val expected = ExpectedResult.parse(testDesc.expected)
+            val expected = ExpectedResult.parse(testDesc.input + testDesc.expected)
 
             test("Входная строка - ${testDesc.input}. Ожидаемый список доков - ${expected.expected}") {
                 val actual = docParser.parse(testDesc.input)
