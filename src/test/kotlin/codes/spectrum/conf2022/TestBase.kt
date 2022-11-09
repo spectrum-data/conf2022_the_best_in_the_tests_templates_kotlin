@@ -8,7 +8,6 @@ import codes.spectrum.conf2022.output.ExtractedDocument
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
-import io.kotest.core.test.TestCaseConfig
 import java.io.File
 import java.io.OutputStreamWriter
 
@@ -16,15 +15,7 @@ import java.io.OutputStreamWriter
  * Базовый спек для запуска тестов. Умеет определять по типу тестового файла - как запускать полученные из него тесты.
  * Также содержит валидация входных файлов - если не удалось их спарсить или они были спаршены с ошибкой - выполнение тестов остановится на этапе валидации.
  * */
-abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Boolean) : FunSpec() {
-    override fun defaultConfig(): TestCaseConfig {
-        return super.defaultConfig().copy(enabled = enabledByDefault)
-    }
-
-    override fun defaultTestCaseConfig(): TestCaseConfig? {
-        return (super.defaultTestCaseConfig() ?: TestCaseConfig()).copy(enabled = enabledByDefault)
-    }
-
+abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /**
      * Статистика выполнения тестов
      * */
@@ -45,12 +36,14 @@ abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Bo
      * Логин на GitHub`e, под которым участник сделал себе форку данного репозитория
      * ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН!
      * */
-    val MY_LOGIN: String by lazy { "Lokbugs" }
+    val MY_LOGIN: String by lazy {
+        getUserLogin()
+    }
 
     /**
      * Экземпляр парсера, который должны реализовать участники
      * */
-    val docParser = MySuperParser()
+    val docParser = UserDocParser()
 
     /**
      * Дополнительные настройки для парсинга входных файлов
@@ -66,6 +59,9 @@ abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Bo
 
     init {
         validateFiles()
+        if (MY_LOGIN.isBlank()) {
+            error("Не удалось автоматически определить логин участника - заполните [MY_LOGIN] самостоятельно")
+        }
 
         baseTests = getBaseFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
         localTests = getLocalFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
@@ -133,7 +129,7 @@ abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Bo
         if (!testDesc.isDisabled) {
             val expected = ExpectedResult.parse(testDesc.input + testDesc.expected)
 
-            test("Входная строка - ${testDesc.input}. Ожидаемый список доков - ${expected.toPatternString()}") {
+            test("Входная строка - ${testDesc.input}. Ожидаемый список доков - ${expected.expected}") {
                 val actual = docParser.parse(testDesc.input)
                 val isMatch = expected.match(actual)
 
@@ -143,8 +139,8 @@ abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Bo
                     buildString {
                         appendLine(testDesc.commentOnFailure)
                         appendLine("Входная строка - ${testDesc.input}")
-                        appendLine("Ожидаемый список доков - ${expected.toPatternString()}")
-                        appendLine("Актуальный список доков - ${actual.map { it.toShortString() }}")
+                        appendLine("Ожидаемый список доков - ${expected.expected}")
+                        appendLine("Актуальный список доков - $actual")
                     }
                 }
             }
@@ -228,6 +224,24 @@ abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Bo
      * */
     private fun getFileByName(name: String): File? =
         filesToProcess.firstOrNull { it.name.lowercase() == name.lowercase() }
+
+    /**
+     * Получение логина участника из git конфига
+     * */
+    private fun getUserLogin(): String {
+        File(PROJECT_ROOT_DIR, ".git/config").useLines { lines ->
+            lines.forEach { line ->
+                val splitByRegex = "(\\s*url = git@github\\.com:)([\\w_-]*)(\\/.*.git)".toRegex().matchEntire(line)
+
+
+                if (splitByRegex != null && splitByRegex.groupValues.count() == 4) {
+                    return splitByRegex.groupValues[2]
+                }
+            }
+        }
+
+        return ""
+    }
 
     companion object {
 
