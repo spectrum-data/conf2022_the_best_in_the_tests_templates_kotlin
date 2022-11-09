@@ -8,10 +8,20 @@ import kotlinx.serialization.Serializable
  * */
 @Serializable
 data class ExtractedDocument(
+    /** Тип документа */
     val docType: DocType = DocType.UNDEFINED,
+
+    /** Значение документа (номер) */
+    val value: String = "",
+
+    /** Установлена ли валидация */
     val isValidSetup: Boolean = false,
+
+    /** Является ли документ валидным
+     * !! устанавливается только в том случае, если проверяется действительно ВАЛИДНОСТЬ нормализованного номера документа
+     * Например - валидный документ - у которого сходится контрольная сумма, не валидный - у которого не сходится
+     * */
     val isValid: Boolean = false,
-    val value: String = ""
 ) {
     /**
      * Проверяет, что переданный документ подходит под данный паттерн
@@ -30,6 +40,6 @@ data class ExtractedDocument(
     /**
      * Проверяет, что если проверяется значение - оно должно быть нормализовано
      * */
-    fun isNormal(): Boolean = docType.normaliseRegex.matches(value)
+    fun isNormal(): Boolean = value.isBlank() || docType.normaliseRegex.matches(value)
 }
 

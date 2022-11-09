@@ -3,7 +3,9 @@ package codes.spectrum.conf2022
 import java.io.File
 
 /**
- * Запуск базовых и локальных тестов
+ * Запуск только БАЗОВЫХ и ЛОКАЛЬНЫХ тестов участника
+ * Файл с базовыми тестами - base.csv
+ * Файл с локальными тестами - local.csv
  * */
 class LocalTest : TestBase(
     filesToProcess = listOf(

@@ -2,7 +2,6 @@ package codes.spectrum.conf2022
 
 import codes.spectrum.conf2022.input.IDocParser
 import codes.spectrum.conf2022.input.TestDesc
-import codes.spectrum.conf2022.input.RandomSuccessfulParser
 import codes.spectrum.conf2022.input.TestDescParser
 import codes.spectrum.conf2022.output.ExpectedResult
 import codes.spectrum.conf2022.output.ExtractedDocument
@@ -13,7 +12,8 @@ import java.io.File
 import java.io.OutputStreamWriter
 
 /**
- * Базовый спек для запуска тестов. Работает с описанями тестов в формате csv-файлов.
+ * Базовый спек для запуска тестов. Умеет определять по типу тестового файла - как запускать полученные из него тесты.
+ * Также содержит валидация входных файлов - если не удалось их спарсить или они были спаршены с ошибкой - выполнение тестов остановится на этапе валидации.
  * */
 abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /**
@@ -31,16 +31,16 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     private lateinit var mainTests: List<TestDesc>
 
 
-    // TODO("вернуть TODO здесь")
+    // TODO("ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН")
     /**
-     * Логин участника
+     * Логин на GitHub`e, под которым участник сделал себе форку данного репозитория
+     * ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН!
      * */
     val MY_LOGIN: String by lazy { "lokbugs" }
 
-    val parserOption: TestDescParser.Options by lazy { TestDescParser.Options(author = MY_LOGIN) }
-
+    // TODO("Участники должны указать свою реализацию парсера ЗДЕСЬ!")
     /**
-     * Экземпляр парсера, который необходимо реализовать участникам
+     * Экземпляр парсера, который должны реализовать участники
      * */
     val docParser = object : IDocParser {
         override fun parse(input: String): List<ExtractedDocument> {
@@ -48,6 +48,14 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         }
     }
 
+    /**
+     * Дополнительные настройки для парсинга входных файлов
+     * */
+    val parserOption: TestDescParser.Options by lazy { TestDescParser.Options(author = MY_LOGIN) }
+
+    /**
+     * После выполнения
+     * */
     override fun afterSpec(spec: Spec) {
         makeReport()
     }
@@ -190,7 +198,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * Валидирует входные файлы
      * */
     private fun validateFiles(): Unit = filesToProcess.forEach { file ->
-        val parseResult = TestDescParser.parse(file, options = TestDescParser.Options(MY_LOGIN))
+        val parseResult = TestDescParser.parse(file, options = parserOption)
 
         if (!parseResult.isOk)
             error("Файл - ${file.name} не валидный. Ошибка: ${parseResult.error}")

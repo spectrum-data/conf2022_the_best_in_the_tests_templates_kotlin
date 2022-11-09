@@ -4,17 +4,6 @@ import codes.spectrum.conf2022.doc_type.DocType
 import kotlinx.serialization.Serializable
 
 /**
- * Описание ожидаемого результата :
- *
- * вход:
- * Паспорт РФ 01 23 456789 == PASSPORT_RF:01234567890
- *
- * выход:
- * isExactly = true, isOrderRequired = true,
- * result = listOf(Document(PASSPORT_RF, "01234567890"))
- */
-
-/**
  * Описание ожидаемого результата парсинга входной строки
  * */
 @Serializable
@@ -90,11 +79,11 @@ data class ExpectedResult(
          * */
         const val EXPECTED_DOCUMENTS_SEPARATOR = ","
 
-        fun parse(input: String): ExpectedResult {
-            val splitByRegex = INPUT_STRUCTURE_REGEX.toRegex().matchEntire(input)
+        fun parse(fullStringToProcessed: String): ExpectedResult {
+            val splitByRegex = INPUT_STRUCTURE_REGEX.toRegex().matchEntire(fullStringToProcessed)
 
             check(splitByRegex != null && splitByRegex.groupValues.count() == 4) {
-                "Входная строка '$input' не соответствует структуре '$INPUT_STRUCTURE_REGEX'"
+                "Входная строка '$fullStringToProcessed' не соответствует структуре '$INPUT_STRUCTURE_REGEX'"
             }
 
             val filledConstraints = createAndFillConstraints(splitByRegex.groupValues[2])
@@ -133,7 +122,7 @@ data class ExpectedResult(
                             )
                         }
                     }.also {
-                        if (it.value.isNotBlank() && !it.isNormal()) {
+                        if (!it.isNormal()) {
                             error("Указанный номер - '${it.value}' - не соответствует нормализованному формату ${it.docType.normaliseRegex} для ${it.docType}")
                         }
                     }

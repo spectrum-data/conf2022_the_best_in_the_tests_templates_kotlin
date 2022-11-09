@@ -9,7 +9,10 @@ import java.net.http.HttpResponse
 import java.util.concurrent.TimeUnit
 
 /**
- * Запуск базовых, локальных и общих тестов
+ * Запуск только БАЗОВЫХ, ЛОКАЛЬНЫХ тестов участника и ОБЩИХ тестов всех участников
+ * Файл с базовыми тестами - base.csv
+ * Файл с локальными тестами - local.csv
+ * Файл с общими тестами всех участников main.csv - выкачивается из общего репозитория
  * */
 class MainTest : TestBase(
     filesToProcess = listOf(

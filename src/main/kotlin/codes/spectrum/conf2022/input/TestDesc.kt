@@ -3,7 +3,17 @@ package codes.spectrum.conf2022.input
 import java.time.Instant
 
 /**
- * Описатель теста
+ * TestDesc
+ * Описание тестов.
+ * Входной файл должен выглядеть так:
+ *
+ *author |input                            |stringToProcessed		|isDisabled	|commentOnFailure                                		|publishTime
+ *harisov|паспорт Харисов Д.И. 1008 123848 |==PASSPORT_RF:1009123848|false     	|Не удалось определить паспорт РФ ФЛ  |2022-01-01T00:12:28.642595Z
+ *harisov|Паспорт Харисов Д.И. 10090 123848|=?PASSPORT_RF:1009123848|false     	|Не удалось определить паспорт РФ ФЛ|2022-01-01T00:22:28.642595Z
+ *
+ * Или в упрощенном формате так:
+ * паспорт Харисов Д.И. 1008 123848 -> PASSPORT_RF:1009123848 #Не удалось определить паспорт РФ ФЛ
+ * Паспорт Харисов Д.И. 10090 123848 -> =?PASSPORT_RF:1009123848 #Не удалось определить паспорт РФ ФЛ
  */
 data class TestDesc(
     /**
@@ -29,6 +39,8 @@ data class TestDesc(
     val commentOnFailure: String = "",
     /**
      * Время публикации
+     * Техническое поле, необходимое при сведении
+     * При работе участников - не используется
      */
     val publishTime: Instant = Instant.MIN,
 ) {

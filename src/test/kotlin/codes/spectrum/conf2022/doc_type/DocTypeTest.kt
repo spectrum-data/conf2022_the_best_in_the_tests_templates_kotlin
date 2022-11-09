@@ -174,7 +174,7 @@ class DocTypeTest : FunSpec() {
 
             testNormaliseRegex(
                 testName = "НА69 - содержит только две цифры и две буквы - не валиден",
-                doc = grz.copy(value = "С227НА6"),
+                doc = grz.copy(value = "НА69"),
                 isMatch = false
             )
         }
@@ -195,7 +195,7 @@ class DocTypeTest : FunSpec() {
             )
 
             testNormaliseRegex(
-                testName = "12AA567890 - две цифры две буквы заглавные шесть цифр содержит пробел - не валиден",
+                testName = "12 AA 567890 - две цифры две буквы заглавные шесть цифр содержит пробел - не валиден",
                 doc = sts.copy(value = "12 AA 567890"),
                 isMatch = false
             )

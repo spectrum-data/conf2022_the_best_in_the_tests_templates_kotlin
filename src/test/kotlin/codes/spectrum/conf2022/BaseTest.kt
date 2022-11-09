@@ -3,7 +3,8 @@ package codes.spectrum.conf2022
 import java.io.File
 
 /**
- * Запуск базовых тестов
+ *  Запуск только БАЗОВЫХ ТЕСТОВ
+ *  Файл с тестами - base.csv
  * */
 class BaseTest : TestBase(
     filesToProcess = listOf(
