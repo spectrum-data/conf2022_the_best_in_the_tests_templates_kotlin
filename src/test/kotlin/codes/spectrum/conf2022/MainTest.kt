@@ -38,6 +38,7 @@ class MainTest : TestBase(
             val request = HttpRequest
                 .newBuilder()
                 .GET()
+                .header("cache-control", "no-cache")
                 .uri(
                     URI("https://raw.githubusercontent.com/spectrum-data/conf2022_the_best_in_the_tests_templates_base/main/main.csv")
                 )
@@ -54,7 +55,7 @@ class MainTest : TestBase(
                 result = response.body()
             } else {
 
-                if(System.getenv("IS_LOCAL_TEST_MODE") != "true") {
+                if (System.getenv("IS_LOCAL_TEST_MODE") != "true") {
                     error("не удалось прокачать main.csv!!!")
                 }
 
@@ -72,9 +73,9 @@ class MainTest : TestBase(
                 processing.waitFor(2, TimeUnit.SECONDS)
 
                 val content = processing.inputStream.reader().use { it.readText() }
-                if(processing.exitValue() == 0) {
+                if (processing.exitValue() == 0) {
                     result = content.replaceBefore(csvHeader, "")
-                }else{
+                } else {
                     System.err.println("!!! Не удалось вкачать!!!")
                     result = csvHeader
                 }
