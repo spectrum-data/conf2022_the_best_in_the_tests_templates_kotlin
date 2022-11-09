@@ -238,11 +238,17 @@ abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Bo
     private fun getUserLogin(): String {
         File(PROJECT_ROOT_DIR, ".git/config").useLines { lines ->
             lines.forEach { line ->
-                val splitByRegex = "(\\s*url = git@github\\.com:)([\\w_-]*)(\\/.*.git)".toRegex().matchEntire(line)
+                val splitBySSHRegex = "(\\s*url = git@github\\.com:)([\\w_-]*)(\\/.*.git)".toRegex().matchEntire(line)
 
+                if (splitBySSHRegex != null && splitBySSHRegex.groupValues.count() == 4) {
+                    return splitBySSHRegex.groupValues[2]
+                }
 
-                if (splitByRegex != null && splitByRegex.groupValues.count() == 4) {
-                    return splitByRegex.groupValues[2]
+                val splitByHTTPRegex =
+                    "(\\s*url = https://github\\.com/)([\\w_-]*)(\\/.*.git)".toRegex().matchEntire(line)
+
+                if (splitByHTTPRegex != null && splitByHTTPRegex.groupValues.count() == 4) {
+                    return splitByHTTPRegex.groupValues[2]
                 }
             }
         }
