@@ -10,7 +10,7 @@ import kotlin.random.Random
  *
  * контракт один - пустой конструктор и реализация [IDocParser]
  */
-class MySuperParser: IDocParser {
+class UserDocParser: IDocParser {
     override fun parse(input: String): List<ExtractedDocument> {
         /**
          * Это пример чтобы пройти совсем первый базовый тест, хардкод, но понятно API,
