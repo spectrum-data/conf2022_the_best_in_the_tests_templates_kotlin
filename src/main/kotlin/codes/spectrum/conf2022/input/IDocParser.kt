@@ -12,16 +12,3 @@ interface IDocParser {
      * */
     fun parse(input: String): List<ExtractedDocument>
 }
-
-/**
- * Реализация парсерса участником
- * */
-class UserDocParser : IDocParser {
-    override fun parse(input: String): List<ExtractedDocument> {
-        /**
-         * Вот этот метод Вам и нужно реализовать
-         * */
-        return emptyList()
-    }
-
-}

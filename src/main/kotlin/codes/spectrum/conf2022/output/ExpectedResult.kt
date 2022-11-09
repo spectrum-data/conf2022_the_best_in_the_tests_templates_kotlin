@@ -21,12 +21,48 @@ data class ExpectedResult(
      * false - ожидаемый набор в любом порядке
      * */
     val isOrderRequired: Boolean = false,
-
     /**
      * Набор ожидаемых извлеченных документов
      * */
     val expected: List<ExtractedDocument> = emptyList()
 ) {
+
+    fun toPatternString() : String {
+        return buildString {
+            if(isExactly){
+                append("=")
+            }else{
+                append("~")
+            }
+            if(isOrderRequired){
+                append("=")
+            }else{
+                append("?")
+            }
+            append("[")
+            for(d in expected){
+                append(d.docType)
+                if(d.isValidSetup) {
+                    if(d.isValid){
+                        append("+")
+                    }else{
+                        append("-")
+                    }
+                }else{
+                    append("*")
+                }
+                append(":")
+                if(d.value.isBlank()){
+                    append("*")
+                }else{
+                    append(d.value)
+                }
+                append(",")
+            }
+
+            append("]")
+        }
+    }
 
     /**
      * Проверяет набор документов на совпадение с ожидаемым результатом.
@@ -86,10 +122,12 @@ data class ExpectedResult(
                 "Входная строка '$fullStringToProcessed' не соответствует структуре '$INPUT_STRUCTURE_REGEX'"
             }
 
-            val filledConstraints = createAndFillConstraints(splitByRegex.groupValues[2])
-            val parseExpectedDocs = parseExpectedDocs(splitByRegex.groupValues[3])
+            val op = splitByRegex.groupValues[2].trim().takeIf { it.isNotBlank() } ?: "=="
+            val filledConstraints = createAndFillConstraints(op)
+            val patterns = splitByRegex.groupValues[3].trim()
+            val parseExpectedDocs = parseExpectedDocs(patterns)
 
-            return filledConstraints.copy(expected = parseExpectedDocs)
+            return filledConstraints.copy( expected = parseExpectedDocs)
         }
 
         private fun parseExpectedDocs(input: String): List<ExtractedDocument> {

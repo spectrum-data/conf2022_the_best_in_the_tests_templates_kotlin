@@ -1,9 +1,9 @@
 package codes.spectrum.conf2022.output
 
+import codes.spectrum.conf2022.InternalTest
 import codes.spectrum.conf2022.doc_type.DocType
 import codes.spectrum.conf2022.output.ExpectedResult.Companion.INPUT_STRUCTURE_REGEX
 import io.kotest.assertions.throwables.shouldThrowMessage
-import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -14,7 +14,7 @@ import io.kotest.matchers.string.shouldBeEmpty
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class ExpectedResultTest : FunSpec() {
+internal class ExpectedResultTest : InternalTest() {
     init {
         val correctInput = "1"
         val correctConstraints = "=="

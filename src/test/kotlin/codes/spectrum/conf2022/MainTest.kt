@@ -19,7 +19,8 @@ class MainTest : TestBase(
         File(PROJECT_ROOT_DIR, BASE_TEST_FILE_NAME),
         File(PROJECT_ROOT_DIR, LOCAL_TEST_FILE_NAME),
         getActualMain(),
-    )
+    ),
+    enabledByDefault = true
 ) {
     init {
 
@@ -53,12 +54,16 @@ class MainTest : TestBase(
                 result = response.body()
             } else {
 
+                if(System.getenv("IS_LOCAL_TEST_MODE") != "true") {
+                    error("не удалось прокачать main.csv!!!")
+                }
+
                 //TODO("ДАННЫЙ ВЫЗОВ НУЖЕН ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ - ПОСЛЕ ПУБЛИКАЦИИ ДОЛЖЕН БЫТЬ УДАЛЕН.")
                 //TODO("По токену из приватного репозитория не получается получить файл по АПИ (даже с токеном)")
                 //TODO("После публикации - нет необходимости в токене")
 
                 val processing = ProcessBuilder(
-                    "curl",
+                    "curl", "--fail",
                     "https://${token}@raw.githubusercontent.com/spectrum-data/conf2022_the_best_in_the_tests_templates_base/main/main.csv"
                 )
                     .redirectErrorStream(true)
@@ -66,7 +71,13 @@ class MainTest : TestBase(
 
                 processing.waitFor(2, TimeUnit.SECONDS)
 
-                processing.inputStream.reader().use { result = it.readText().replaceBefore(csvHeader, "") }
+                val content = processing.inputStream.reader().use { it.readText() }
+                if(processing.exitValue() == 0) {
+                    result = content.replaceBefore(csvHeader, "")
+                }else{
+                    System.err.println("!!! Не удалось вкачать!!!")
+                    result = csvHeader
+                }
             }
 
             return File(PROJECT_ROOT_DIR, MAIN_TEST_FILE_NAME).also {

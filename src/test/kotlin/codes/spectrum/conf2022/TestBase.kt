@@ -3,7 +3,6 @@ package codes.spectrum.conf2022
 import codes.spectrum.conf2022.input.IDocParser
 import codes.spectrum.conf2022.input.TestDesc
 import codes.spectrum.conf2022.input.TestDescParser
-import codes.spectrum.conf2022.input.UserDocParser
 import codes.spectrum.conf2022.output.ExpectedResult
 import codes.spectrum.conf2022.output.ExtractedDocument
 import io.kotest.core.spec.Spec
@@ -31,6 +30,8 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /** Набор описаний общих тестов */
     private lateinit var mainTests: List<TestDesc>
 
+
+    // TODO("ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН")
     /**
      * Логин на GitHub`e, под которым участник сделал себе форку данного репозитория
      * ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН!
