@@ -36,15 +36,15 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * Логин на GitHub`e, под которым участник сделал себе форку данного репозитория
      * ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН!
      * */
-    val MY_LOGIN: String by lazy { "lokbugs" }
+    val MY_LOGIN: String by lazy { "Lokbugs" }
 
-    // TODO("Участники должны указать свою реализацию парсера ЗДЕСЬ!")
     /**
      * Экземпляр парсера, который должны реализовать участники
      * */
     val docParser = object : IDocParser {
         override fun parse(input: String): List<ExtractedDocument> {
-            return emptyList()
+            TODO("Участники должны указать свою реализацию парсера ЗДЕСЬ!")
+            //return emptyList()
         }
     }
 
