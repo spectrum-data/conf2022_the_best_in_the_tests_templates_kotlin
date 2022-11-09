@@ -41,11 +41,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /**
      * Экземпляр парсера, который должны реализовать участники
      * */
-    val docParser = object : IDocParser {
-        override fun parse(input: String): List<ExtractedDocument> {
-            return emptyList()
-        }
-    }
+    val docParser = MySuperParser()
 
     /**
      * Дополнительные настройки для парсинга входных файлов
@@ -128,7 +124,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
         if (!testDesc.isDisabled) {
             val expected = ExpectedResult.parse(testDesc.input + testDesc.expected)
 
-            test("Входная строка - ${testDesc.input}. Ожидаемый список доков - ${expected.expected}") {
+            test("Входная строка - ${testDesc.input}. Ожидаемый список доков - ${expected.toPatternString()}") {
                 val actual = docParser.parse(testDesc.input)
                 val isMatch = expected.match(actual)
 
@@ -138,8 +134,8 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
                     buildString {
                         appendLine(testDesc.commentOnFailure)
                         appendLine("Входная строка - ${testDesc.input}")
-                        appendLine("Ожидаемый список доков - ${expected.expected}")
-                        appendLine("Актуальный список доков - $actual")
+                        appendLine("Ожидаемый список доков - ${expected.toPatternString()}")
+                        appendLine("Актуальный список доков - ${actual.map{it.toShortString()}}")
                     }
                 }
             }

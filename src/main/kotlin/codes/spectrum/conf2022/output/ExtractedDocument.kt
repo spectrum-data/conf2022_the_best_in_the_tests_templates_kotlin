@@ -34,12 +34,19 @@ data class ExtractedDocument(
 
         return doTypesEqual
                 && (!isNeedToCompareNumber || value == comparedAnswer.value)
-                && (!isNeedToCompareValidation || isValid == comparedAnswer.isValid)
+                && (!isNeedToCompareValidation || (comparedAnswer.isValidSetup && isValid == comparedAnswer.isValid))
     }
 
     /**
      * Проверяет, что если проверяется значение - оно должно быть нормализовано
      * */
     fun isNormal(): Boolean = value.isBlank() || docType.normaliseRegex.matches(value)
+    fun toShortString(): String {
+        return "${docType}${
+            if (isValidSetup) {
+                if (isValid) "+" else "-"
+            } else ""
+        }${if (value.isBlank()) "" else ":$value"}"
+    }
 }
 
