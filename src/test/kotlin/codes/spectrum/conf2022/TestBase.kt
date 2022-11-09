@@ -43,8 +43,7 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * */
     val docParser = object : IDocParser {
         override fun parse(input: String): List<ExtractedDocument> {
-            TODO("Участники должны указать свою реализацию парсера ЗДЕСЬ!")
-            //return emptyList()
+            return emptyList()
         }
     }
 

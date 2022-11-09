@@ -1,11 +1,11 @@
 package codes.spectrum.conf2022.doc_type
 
 import codes.spectrum.conf2022.output.ExtractedDocument
-import io.kotest.core.spec.style.FunSpec
+import codes.spectrum.conf2022.InternalTest
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
 import io.kotest.matchers.shouldBe
 
-class DocTypeTest : FunSpec() {
+internal class DocTypeTest : InternalTest() {
     suspend fun FunSpecContainerContext.testNormaliseRegex(testName: String, doc: ExtractedDocument, isMatch: Boolean) {
         test(testName) {
             doc.isNormal() shouldBe isMatch

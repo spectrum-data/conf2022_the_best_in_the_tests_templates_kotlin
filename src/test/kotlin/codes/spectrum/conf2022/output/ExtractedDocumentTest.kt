@@ -1,14 +1,14 @@
 package codes.spectrum.conf2022.output
 
+import codes.spectrum.conf2022.InternalTest
 import codes.spectrum.conf2022.doc_type.DocType
-import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 
 /**
  * Тесты на сравнение документов
  * */
-class ExtractedDocumentTest : FunSpec() {
+internal class ExtractedDocumentTest : InternalTest() {
     init {
         context("Установлен только doctype") {
             val onlyDocType =

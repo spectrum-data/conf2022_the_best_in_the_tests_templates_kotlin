@@ -1,13 +1,13 @@
 package codes.spectrum.conf2022.input
 
-import io.kotest.core.spec.style.FunSpec
+import codes.spectrum.conf2022.InternalTest
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import java.time.Instant
 
-internal class TestDescParserTest : FunSpec() {
+internal class TestDescParserTest : InternalTest() {
     init {
         val time = Instant.parse("2022-11-09T11:01:22.123567Z")
         val test1 = TestDesc(
