@@ -3,6 +3,7 @@ package codes.spectrum.conf2022
 import codes.spectrum.conf2022.input.IDocParser
 import codes.spectrum.conf2022.input.TestDesc
 import codes.spectrum.conf2022.input.TestDescParser
+import codes.spectrum.conf2022.input.UserDocParser
 import codes.spectrum.conf2022.output.ExpectedResult
 import codes.spectrum.conf2022.output.ExtractedDocument
 import io.kotest.core.spec.Spec
@@ -30,23 +31,18 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
     /** Набор описаний общих тестов */
     private lateinit var mainTests: List<TestDesc>
 
-
-    // TODO("ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН")
     /**
      * Логин на GitHub`e, под которым участник сделал себе форку данного репозитория
      * ПЕРЕД ЗАПУСКОМ ТЕСТОВ - ДОЛЖЕН БЫТЬ ЗАПОЛНЕН!
      * */
-    val MY_LOGIN: String by lazy { "Lokbugs" }
+    val MY_LOGIN: String by lazy {
+        getUserLogin()
+    }
 
     /**
      * Экземпляр парсера, который должны реализовать участники
      * */
-    val docParser = object : IDocParser {
-        override fun parse(input: String): List<ExtractedDocument> {
-            TODO("Участники должны указать свою реализацию парсера ЗДЕСЬ!")
-            //return emptyList()
-        }
-    }
+    val docParser = UserDocParser()
 
     /**
      * Дополнительные настройки для парсинга входных файлов
@@ -62,6 +58,9 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
 
     init {
         validateFiles()
+        if (MY_LOGIN.isBlank()) {
+            error("Не удалось автоматически определить логин участника - заполните [MY_LOGIN] самостоятельно")
+        }
 
         baseTests = getBaseFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
         localTests = getLocalFile()?.let { file -> TestDescParser.parse(file, parserOption) }?.data ?: emptyList()
@@ -224,6 +223,24 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * */
     private fun getFileByName(name: String): File? =
         filesToProcess.firstOrNull { it.name.lowercase() == name.lowercase() }
+
+    /**
+     * Получение логина участника из git конфига
+     * */
+    private fun getUserLogin(): String {
+        File(PROJECT_ROOT_DIR, ".git/config").useLines { lines ->
+            lines.forEach { line ->
+                val splitByRegex = "(\\s*url = git@github\\.com:)([\\w_-]*)(\\/.*.git)".toRegex().matchEntire(line)
+
+
+                if (splitByRegex != null && splitByRegex.groupValues.count() == 4) {
+                    return splitByRegex.groupValues[2]
+                }
+            }
+        }
+
+        return ""
+    }
 
     companion object {
 
