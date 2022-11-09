@@ -1,13 +1,12 @@
 package codes.spectrum.conf2022
 
-import codes.spectrum.conf2022.input.IDocParser
 import codes.spectrum.conf2022.input.TestDesc
 import codes.spectrum.conf2022.input.TestDescParser
 import codes.spectrum.conf2022.output.ExpectedResult
-import codes.spectrum.conf2022.output.ExtractedDocument
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerContext
+import io.kotest.core.test.TestCaseConfig
 import java.io.File
 import java.io.OutputStreamWriter
 
@@ -15,7 +14,7 @@ import java.io.OutputStreamWriter
  * Базовый спек для запуска тестов. Умеет определять по типу тестового файла - как запускать полученные из него тесты.
  * Также содержит валидация входных файлов - если не удалось их спарсить или они были спаршены с ошибкой - выполнение тестов остановится на этапе валидации.
  * */
-abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
+abstract class TestBase(val filesToProcess: List<File>, val enabledByDefault: Boolean = false) : FunSpec() {
     /**
      * Статистика выполнения тестов
      * */
@@ -55,6 +54,14 @@ abstract class TestBase(val filesToProcess: List<File>) : FunSpec() {
      * */
     override fun afterSpec(spec: Spec) {
         makeReport()
+    }
+
+    override fun defaultConfig(): TestCaseConfig {
+        return super.defaultConfig().copy(enabled = enabledByDefault)
+    }
+
+    override fun defaultTestCaseConfig(): TestCaseConfig? {
+        return (super.defaultTestCaseConfig() ?: TestCaseConfig()).copy(enabled = enabledByDefault)
     }
 
     init {
